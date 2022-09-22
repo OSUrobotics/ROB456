@@ -136,7 +136,7 @@ data_new_csv = scale_amount * (data_from_csv - shift_amount)
 print(f"Shifted minimum: {np.min(data_new_csv)} and maximum: {np.max(data_new_csv)}")
 
 # Now for the if statement. There are a handful of places in the data where there are zeros. These are places where
-#  there wasn't any valid data, so they shouldn't be included when doing a mean calculations.
+#  there wasn't any valid data, so they shouldn't be included when doing a mu calculations.
 mean_including_zeros = np.mean(data_from_csv)
 # The [data_from_csv != 0] selects all of the data that is not 0.0
 #   Note: You should use isclose() for most floating point comparisons, not == 0
@@ -147,7 +147,7 @@ print(f"Means with {mean_including_zeros} and without {mean_not_including_zeros}
 #   each column of the data.
 # What this code does: Does a similar shift/scale as above, but this time, on each column of the data individually
 # The idea is that each row is one run from an experiment, each column represents a single data value that you're
-#     capturing. You want to "normalize" the data for each value so that the mean is zero and the data has a standard
+#     capturing. You want to "normalize" the data for each value so that the mu is zero and the data has a standard
 #     deviation of 1
 # Pre-alloc the matrix to put the data back into - since we know the size of the data, it's easiest to make a new
 #  numpy array of the right size and then copy data in and edit it after it's copied in
@@ -171,11 +171,11 @@ for c in range(0, data_from_csv.shape[1]):
     #          non_zero_data[r,c] = (non_zero_data[r,c] - shift) / std_column
     data_new_csv[non_zero_data_in_col, c] = (data_new_csv[non_zero_data_in_col, c] - mean_column) / std_column
 
-# Because we've normalized all the columns individually, the mean and standard deviation of the ENTIRE data
+# Because we've normalized all the columns individually, the mu and standard deviation of the ENTIRE data
 #  set should be close to 0, +=1
 print(f"Mean {np.mean(data_new_csv)} and std {np.std(data_new_csv)} for ALL data")
 
-# ... but is we ask for the mean, std for one row it is NOT
+# ... but is we ask for the mu, std for one row it is NOT
 print(f"Mean {np.mean(data_new_csv[0, :])} and std {np.std(data_new_csv[0, :])} for one row")
 
 

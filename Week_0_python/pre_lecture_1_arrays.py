@@ -23,8 +23,8 @@ import numpy as np
 
 # Function 1 to fill in: Calculate stats when the input variable is a list
 def calc_stats_from_list(in_list):
-    """ Calculate mean of positive numbers, mean of negatives numbers
-    Separate the list into positive and negative numbers. Calculate the mean of each. Return those means, along with
+    """ Calculate mu of positive numbers, mu of negatives numbers
+    Separate the list into positive and negative numbers. Calculate the mu of each. Return those means, along with
      how many positive/negative numbers there were
     @param in_list : any list type
     @return - A dictionary with the desired stats"""
@@ -57,8 +57,8 @@ def calc_stats_from_list(in_list):
 #   NO if statements or for loops - do this all with numpy operations
 #     You might find "count_nonzero" useful
 def calc_stats_from_nparray(in_list):
-    """ Calculate mean of positive numbers, mean of negatives numbers
-    Separate the list into positive and negative numbers. Calculate the mean of each. Return those means, along with
+    """ Calculate mu of positive numbers, mu of negatives numbers
+    Separate the list into positive and negative numbers. Calculate the mu of each. Return those means, along with
      how many positive/negative numbers there were
     @param in_list : numpy array
     @return - A dictionary with the desired stats"""

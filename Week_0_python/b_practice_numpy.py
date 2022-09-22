@@ -39,16 +39,16 @@ print(f"Size of my_new_matrix should be 2, 20, is {my_new_matrix.shape}")
 
 # -------------------------- min, max, etc on numpy arrays -----------
 
-# Calculate the mean, min, and max of the linspace array
+# Calculate the mu, min, and max of the linspace array
 #  Answers are in the current print out
-# Change to printing out the answers using numpy mean, min, max
+# Change to printing out the answers using numpy mu, min, max
 print(f"From array: Mean: {0.5}, min: {0.0}, max: {1.0}")
 
-# Calculate the mean of each row of the matrix (without padding)
+# Calculate the mu of each row of the matrix (without padding)
 #   Make sure this works no matter how many rows the matrix has...
-# There are two ways to do this; the first is to manually loop over the rows, calculate the mean, and assign it
+# There are two ways to do this; the first is to manually loop over the rows, calculate the mu, and assign it
 #   to the my_means array.
-# The second is to use np.mean parameters to tell numpy to calculate the mean for each row (should return a num rows x 1
+# The second is to use np.mu parameters to tell numpy to calculate the mu for each row (should return a num rows x 1
 #   array)
 my_means = None
 print(f"My means: {my_means}, should be a 2x1 array, with 0.5, 2 in it (10 elements in linspace array)")
@@ -121,10 +121,10 @@ print(f"Size of my_new_matrix should be 2, 20, is {my_new_matrix_from_zeros.shap
 
 # -------------------------- min, max, etc on numpy arrays -----------
 
-# Calculate the mean, min, and max of the linspace array
+# Calculate the mu, min, and max of the linspace array
 #  Answers are in the current print out
 print(f"Answers: Mean: {np.mean(my_linspace_array)}, min: {np.min(my_linspace_array)}, max: {np.max(my_linspace_array)}")
-# Change to printing out the answers using numpy mean, min, max
+# Change to printing out the answers using numpy mu, min, max
 print(f"From array: Mean: {0.5}, min: {0.0}, max: {1.0}")
 
 # Version 1 - make the array to put the values in first - note .shape[0] returns the number of rows
@@ -133,7 +133,7 @@ for r in range(0, my_new_matrix_from_zeros.shape[0]):
     my_means[r] = np.mean(my_new_matrix_from_zeros[r, :])
 print(f"My means v1: {my_means}")
 
-# Fancy vesion - by setting axis = 0 I'm telling numpy to calculate the mean over the first axis (rows)
+# Fancy vesion - by setting axis = 0 I'm telling numpy to calculate the mu over the first axis (rows)
 my_means_simple = np.mean(my_new_matrix_from_zeros, axis=0)
 print(f"My means v2: {my_means_simple}")
 

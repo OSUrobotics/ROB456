@@ -31,9 +31,9 @@ class RobotSensors:
 
 # YOUR CODE HERE
 
-    def set_distance_wall_sensor_probabilities(self, mu=0.0, sigma=0.1):
+    def set_distance_wall_sensor_probabilities(self, sigma=0.1):
         """ Setup the wall sensor probabilities (store them in the dictionary)
-        @param mu - mu of noise
+        Note: Mean is zero for this assignment
         @param sigma - sigma of noise"""
 
         # Kalman assignment
@@ -64,8 +64,9 @@ class RobotSensors:
 # YOUR CODE HERE
 
 
-def test_discrete_sensors():
-    """ Test that the door sensor is working correctly"""
+def test_discrete_sensors(b_print=True):
+    """ Test that the door sensor is working correctly
+    @param b_print - do print statements, yes/no"""
     np.random.seed(3)
 
     robot_gt = RobotGroundTruth()
@@ -83,7 +84,8 @@ def test_discrete_sensors():
         robot_gt.robot_loc = loc
 
         is_in_front_of_door_gt = world_gt.is_location_in_front_of_door(robot_gt.robot_loc)
-        print(f"Testing case for robot in front of door: {is_in_front_of_door_gt}")
+        if b_print:
+            print(f"Testing case for robot in front of door: {is_in_front_of_door_gt}")
 
         # Check that we get our probabilities back (mostly)
         count_returned_true = 0
@@ -99,18 +101,20 @@ def test_discrete_sensors():
         if not np.isclose(prob_count_true, p, atol=0.1):
             raise ValueError(f"Probability should be close to {p:0.4f}, is {prob_count_true:0.4f}, robot loc {is_in_front_of_door_gt}")
 
-    print("Passed tests")
+    if b_print:
+        print("Passed tests")
     return True
 
 
-def test_continuous_sensor():
-    """ Test that the distance to wall sensor is working properly"""
-    print("Checking query wall with normal distribution probabilities")
+def test_continuous_sensor(b_print=True):
+    """ Test that the distance to wall sensor is working properly
+    @param b_print - do print statements, yes/no"""
+    if b_print:
+        print("Checking query wall with normal distribution probabilities")
 
     robot_gt = RobotGroundTruth()
     robot_sensor = RobotSensors()
 
-    mu = 0.01
     sigma = 0.01
 
     # Doing this as a for loop with pre-allocating the data (np.zeros instead of a list with an append) because
@@ -119,7 +123,7 @@ def test_continuous_sensor():
     # This is the exactly how one would measure sensor noise in the first place, btw
     n_samples = 10000
     dist_measured = np.zeros(n_samples)
-    robot_sensor.set_distance_wall_sensor_probabilities(mu, sigma)
+    robot_sensor.set_distance_wall_sensor_probabilities(sigma)
     for i in range(0, n_samples):
         # Put the robot in a random location
         robot_gt.place_random()
@@ -130,15 +134,17 @@ def test_continuous_sensor():
     # What is the mu and sigma of the sensor noise?
     mu_query = np.mean(dist_measured)
     sigma_query = np.std(dist_measured)
-    if not np.isclose(mu_query, mu, atol=0.01):
-        raise ValueError(f"Mean should be close to {mu}, is {mu_query}")
+    if not np.isclose(mu_query, 0.0, atol=0.01):
+        raise ValueError(f"Mean should be close to 0.0, is {mu_query}")
     if not np.isclose(sigma_query, sigma, atol=0.01):
         raise ValueError(f"Mean should be close to {sigma}, is {sigma_query}")
 
-    print("Passed continuous tests")
+    if b_print:
+        print("Passed continuous tests")
     return True
 
 
 if __name__ == '__main__':
-    test_discrete_sensors()
-    test_continuous_sensor()
+    b_print = True
+    test_discrete_sensors(b_print)
+    test_continuous_sensor(b_print)

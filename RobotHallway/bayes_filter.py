@@ -75,16 +75,18 @@ def check_uniform(bf):
     return True
 
 
-def check_door_probs(bayes_filter, world_ground_truth, robot_sensor_probs, sensor_readings):
+def check_door_probs(bayes_filter, world_ground_truth, robot_sensor_probs, sensor_readings, b_print=True):
     """ If only doing door updates, there are a couple things that have to hold true
      1) All in front of door (and not in front of door) probabilities should be the same
      2) those probabilities are the same as rolling dice n times
      @param bayes_filter - the bayes filter after the sensor readings
      @param world_ground_truth - the world ground truth/door readings
      @param robot_sensor_probs - the robot sensor probabilities
-     @param sensor_readings - list of True/False sensor reading return values"""
+     @param sensor_readings - list of True/False sensor reading return values
+     @param b_print - do print statements, yes/no"""
 
-    print(f"Checking sequence {sensor_readings}")
+    if b_print:
+        print(f"Checking sequence {sensor_readings}")
 
     n_doors = len(world_ground_truth.doors)
     n_bins = len(bayes_filter.probabilities)
@@ -115,15 +117,17 @@ def check_door_probs(bayes_filter, world_ground_truth, robot_sensor_probs, senso
             if not np.isclose(prob, prob_not_in_front_of_door):
                 raise ValueError(f"Check door probabilities: new probability should be {prob_not_in_front_of_door}, was {prob}")
 
-    print("Passed\n")
+    if b_print:
+        print("Passed\n")
     return True
 
 
-def test_bayes_filter_sensor_update():
+def test_bayes_filter_sensor_update(b_print=True):
     """ Do a sensor update with known values and check that the answer is correct
     How this works: If there is no motion (just sensor readings) than the values for all of the locations in front
      of the doors should be the same (also true for all of the locations NOT in front of the doors)
-     Those probabilities are just the product of the Bayes' update rule"""
+     Those probabilities are just the product of the Bayes' update rule
+    @param b_print - do print statements, yes/no"""
     world_ground_truth = WorldGroundTruth()
     robot_sensor = RobotSensors()
     bayes_filter = BayesFilter()
@@ -132,7 +136,8 @@ def test_bayes_filter_sensor_update():
     n_bins = 20
     probs = (0.6, 0.1)
 
-    print("Checking Bayes filter sensor update")
+    if b_print:
+        print("Checking Bayes filter sensor update")
     np.random.seed(2)
 
     # Initialize with values that are NOT the default ones
@@ -151,16 +156,18 @@ def test_bayes_filter_sensor_update():
             bayes_filter.update_belief_sensor_reading(world_ground_truth, robot_sensor, s)
 
         # The actual check function
-        check_door_probs(bayes_filter, world_ground_truth, probs, seq)
+        check_door_probs(bayes_filter, world_ground_truth, probs, seq, b_print)
 
-    print("Passed all sequences\n")
+    if b_print:
+        print("Passed all sequences\n")
     return True
 
 
-def test_move_one_direction():
+def test_move_one_direction(b_print=True):
     """ Move all the way to the left (or the right) a LOT, so should pile up probability in the left (or right) bin
     Use the default probabilities
-     @param direction - left or right"""
+     @param direction - left or right
+     @param b_print - do print statements, yes/no"""
     bayes_filter = BayesFilter()
     robot_ground_truth = RobotGroundTruth()
 
@@ -168,7 +175,8 @@ def test_move_one_direction():
     step_size = 1.0 / n_bins
     n_moves = n_bins * 10
 
-    print("Testing move in one direction")
+    if b_print:
+        print("Testing move in one direction")
     np.random.seed(20)
 
     # Try the left, then the right move
@@ -177,10 +185,11 @@ def test_move_one_direction():
     dirs_move = (robot_ground_truth.move_left, robot_ground_truth.move_right)
     dirs_update = (bayes_filter.update_belief_move_left, bayes_filter.update_belief_move_right)
     for dir_move, dir_update, bin_id in zip(dirs_move, dirs_update, (0, n_bins-1)):
-        print(f"Test move {dir_move.__name__}")
+        if b_print:
+            print(f"Test move {dir_move.__name__}")
         # Reset both the bayes filter probabilities and the robot ground truth location
         bayes_filter.reset_probabilities(n_bins)
-        robot_ground_truth.reset()
+        robot_ground_truth.reset_location()
 
         for _ in range(0, n_moves):
             # Move the robot
@@ -190,7 +199,8 @@ def test_move_one_direction():
 
         if not bayes_filter.probabilities[bin_id] > 0.9:
             raise ValueError(f"Expected all of the probability to be in the {bin_id} bin, was {bayes_filter.probabilities[bin_id]}")
-        print("Passed")
+        if b_print:
+            print("Passed")
 
     return True
 
@@ -198,18 +208,20 @@ def test_move_one_direction():
 # YOUR CODE HERE
 
 
-def test_move_update():
-    """ Test the move update. This test is done by comparing your probability values to some pre-calculated/saved values"""
+def test_move_update(b_print=True):
+    """ Test the move update. This test is done by comparing your probability values to some pre-calculated/saved values
+    @param b_print - do print statements, yes/no"""
 
     bayes_filter = BayesFilter()
     robot_ground_truth = RobotGroundTruth()
 
-    # Generate some move sequences and compare to the correct answer
+    # Read in some move sequences and compare your result to the correct answer
     import json
     with open("Data/check_bayes_filter.json", "r") as f:
         answers = json.load(f)
 
-    print("Testing move update")
+    if b_print:
+        print("Testing move update")
     # This SHOULD insure that you get the same answer as the solutions, provided you're only calling uniform within
     #  robot_ground_truth.move*
     np.random.seed(3)
@@ -218,8 +230,6 @@ def test_move_update():
     for answer in answers:
         n_bins = answer["n_bins"]
         step_size = 1.0 / n_bins
-        probs_move_left = answer["Probs_left"]
-        probs_move_right = answer["Probs_right"]
         seq = answer["seq"]
 
         # Reset to uniform
@@ -239,15 +249,17 @@ def test_move_update():
         if not np.any(np.isclose(answer["result"], bayes_filter.probabilities, atol=0.01)):
             ValueError(f"Probabilities are different \n{answer['result']} \n{bayes_filter.probabilities}")
 
-    print("Passed")
+    if b_print:
+        print("Passed")
     return True
 
 
 if __name__ == '__main__':
-    test_bayes_filter_sensor_update()
-    test_move_one_direction()
+    b_print = False
+    test_bayes_filter_sensor_update(b_print)
+    test_move_one_direction(b_print)
 
 
-    test_move_update()
+    test_move_update(b_print)
 
     print("Done")

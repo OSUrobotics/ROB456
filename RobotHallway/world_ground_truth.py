@@ -81,11 +81,13 @@ class WorldGroundTruth:
         return False
 
 
-def test_world_ground_truth():
-    """ Checking the world ground truth code (placing doors)"""
+def test_world_ground_truth(b_print=True):
+    """ Checking the world ground truth code (placing doors)
+    @param b_print - do print statements, yes/no"""
     world = WorldGroundTruth()
 
-    print("Beginning world ground truth test")
+    if b_print:
+        print("Beginning world ground truth test")
     world.random_door_placement(3, 20)
 
     for doors in world.doors:
@@ -93,13 +95,11 @@ def test_world_ground_truth():
             if not world.is_location_in_front_of_door(dw):
                 raise ValueError("Should be in front of door {}".format(dw))
 
-    print("Passed tests")
+    if b_print:
+        print("Passed tests")
     return True
 
 
-def random_me():
-    print("foo")
-    
-    
 if __name__ == '__main__':
-    test_world_ground_truth()
+    b_print = True
+    test_world_ground_truth(b_print)

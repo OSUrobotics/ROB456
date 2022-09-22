@@ -39,7 +39,7 @@ class RobotGroundTruth:
         self.set_move_right_probabilities()
         self.set_move_continuos_probabilities()
 
-    def reset(self):
+    def reset_location(self):
         """ Put robot in the middle"""
         self.robot_loc = 0.5
 
@@ -69,9 +69,9 @@ class RobotGroundTruth:
 
 # YOUR CODE HERE
 
-    def set_move_continuos_probabilities(self, mu=0.0, sigma=0.1):
+    def set_move_continuos_probabilities(self, sigma=0.1):
         """ Set the noise for continuous movement
-        @param mu - mu of noise
+        Note - mean is zero for this assignment
         @param sigma - standard deviation of noise"""
 
         # Kalman assignment
@@ -156,8 +156,9 @@ class RobotGroundTruth:
         # Actually move (don't run off of end)
         return self._move_clamped_continuous(noisy_amount)
 
-def test_discrete_move_functions():
-    """ Check that moving all the way left (or right) pushes the robot to the left (or right) """
+def test_discrete_move_functions(b_print=True):
+    """ Check that moving all the way left (or right) pushes the robot to the left (or right)
+    @param b_print - do print statements, yes/no"""
     np.random.seed(5)
 
     rgt = RobotGroundTruth()
@@ -172,7 +173,8 @@ def test_discrete_move_functions():
     count_right_walls = 0
     # First time through the loop, move left. Second time through the loop, move right
     for mf, dir_move in zip([rgt.move_left, rgt.move_right], ["left", "right"]):
-        print(f"Checking move_{dir_move} function")
+        if b_print:
+            print(f"Checking move_{dir_move} function")
         for i in range(0, n_moves):
             mf(step_size)
             if rgt.robot_loc < 0:
@@ -186,7 +188,8 @@ def test_discrete_move_functions():
 
     # Should take 5 moves to get to left/right walls, plus some amount of moving off of wall randomly.
     #   So this is a reasonable check
-    print(f"On left wall {count_left_walls}, on right wall {count_right_walls}, of {2 * n_moves} moves")
+    if b_print:
+        print(f"On left wall {count_left_walls}, on right wall {count_right_walls}, of {2 * n_moves} moves")
     if count_left_walls < n_moves // 4:
         raise ValueError(f"Failed: Potential problem of not reaching left wall {count_left_walls}")
     if count_right_walls < n_moves // 4:
@@ -195,7 +198,8 @@ def test_discrete_move_functions():
     # Check that we get our probabilities back (mostly)
     n_samples = 10000
     for mf, dir_move in zip([rgt.move_left, rgt.move_right], ["left", "right"]):
-        print(f"Checking move {dir_move} probabilities")
+        if b_print:
+            print(f"Checking move {dir_move} probabilities")
         count_moved_left = 0
         count_moved_right = 0
         for i in range(0, n_samples):
@@ -213,37 +217,43 @@ def test_discrete_move_functions():
         if not np.isclose(rgt.move_probabilities["move_" + dir_move]["right"], prob_count_right, atol=0.1):
             raise ValueError(f"Probability should be close to {rgt.move_probabilities['move_' + dir_move]['right']}, is {prob_count_right}")
 
-    print("Passed discrete tests")
+    if b_print:
+        print("Passed discrete tests")
     return True
 
 
-def test_continuous_move_functions():
+def test_continuous_move_functions(b_print=True):
+    """ Test the Kalman/particle filter robot move (continuous)
+    @param b_print - do print statements, yes/no"""
     rgt = RobotGroundTruth()
 
-    print("Checking move with normal distribution probabilities")
+    if b_print:
+        print("Checking move with normal distribution probabilities")
     dist_moved = []
-    mu = 0.1
     sigma = 0.1
+    move_amount = -0.2
     n_samples = 10000
-    rgt.set_move_continuos_probabilities(mu, sigma)
+    rgt.set_move_continuos_probabilities(sigma)
     for i in range(0, n_samples):
         rgt.robot_loc = 0.5
 
-        dist_moved.append(rgt.move_continuous(0.0))
+        dist_moved.append(rgt.move_continuous(move_amount))
 
     mu_moved = np.mean(dist_moved)
     sigma_moved = np.std(dist_moved)
-    if not np.isclose(mu_moved, mu, atol=0.01):
-        raise ValueError(f"Mean should be close to {mu}, is {mu_moved}")
+    if not np.isclose(mu_moved, move_amount, atol=0.01):
+        raise ValueError(f"Mean should be close to {move_amount}, is {mu_moved}")
     if not np.isclose(sigma_moved, sigma, atol=0.01):
         raise ValueError(f"Mean should be close to {sigma}, is {sigma_moved}")
 
-    print("Passed continuous tests")
+    if b_print:
+        print("Passed continuous tests")
     return True
 
 
 if __name__ == '__main__':
-    test_discrete_move_functions()
-    test_continuous_move_functions()
+    b_print = True
+    test_discrete_move_functions(b_print)
+    test_continuous_move_functions(b_print)
 
     print("Done")

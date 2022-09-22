@@ -5,12 +5,13 @@
 #
 #  How do you use numpy's stats package to generalize a single random variable for:
 #      a) Booleans (T/F)
-#      b) Non-gaussian distributions
-#      c) Discrete variables (a, b, c)
-#      d) Binned "continuous" variables - 0.1-0.2, 0.2-0.3, etc
+#      b) Discrete variables (a, b, c)
+#      c) Binned "continuous" variables - 0.1-0.2, 0.2-0.3, etc
+#      d) Gaussian distribution
+#      e) Non-gaussian distribution (optional)
 #
-#  Think of these as functions as simulating real-world events - query the sensor for if the door is open (y/n),
-#    ask where the robot is (contiuous location OR a grid square in the world), ask which room you're in (discrete
+#  Think of these as functions that simulate real-world events - query the sensor for if the door is open (y/n),
+#    ask where the robot is (continuous location OR a grid square in the world), ask which room you're in (discrete
 #    variable, kitchen dining room, etc). These are all fancy versions of a coin toss (returns T/F with 50% probability each),
 #    a roll of the dice (returns 1..6 with equal probability).
 #
@@ -21,6 +22,7 @@
 #    bin you fell into.
 #
 # For continuous probability functions, you use uniform twice - once to pick the x value, once to pick the y value.
+#    If you're doing a Gaussian, of course, just call numpy's random.normal function.
 #
 # Why the functions are set up they way they are: You need to input how likely each discrete event is. There's three
 #    basic methods for specifying this.
@@ -74,18 +76,17 @@ def test_boolean(test_prob_value=0.6):
     count_true = 0
     count_false = 0
     for _ in range(0, 10000):
-        if sample_boolean_variable(boolean_variable) == True:
+        if sample_boolean_variable(boolean_variable):
             count_true += 1
         else:
             count_false += 1
 
     perc_true = count_true / (count_true + count_false)
-    print(f"Perc true from sampling: {perc_true}, expected {boolean_variable['prob_return_true']}")
-    if not np.isclose(perc_true, boolean_variable["prob_return_true"], 0.02):
-        print("Failed")
+    if not np.isclose(perc_true, boolean_variable["prob_return_true"], atol=0.02):
+        print(f"Failed, expected{boolean_variable['prob_return_true']}, got {perc_true}\n")
         return False
 
-    print("Passed")
+    print("Passed\n")
     return True
 
 
@@ -104,7 +105,7 @@ def sample_discrete_variable(info_variable):
             ValueError(f"Value {v} not between zero and one")
 
     # And they have to sum to one
-    if not np.isclose(sum(info_variable.values()), 1.0):
+    if not np.isclose(sum(info_variable.values()), 1.0, atol=1.0):
         ValueError(f"Sum of probabilities should be 1, is {sum(info_variable.values())}")
 
     # First, use random to generate a number between 0 and one
@@ -129,7 +130,7 @@ def test_discrete():
             counts[k] = 0
 
         # 'throw the dice' multiple times, and update counts as you go
-        n_samples = 50000
+        n_samples = 5000
         for _ in range(0, n_samples):
             # Which discrete variable?
             discrete_value = sample_discrete_variable(check_variable)
@@ -139,12 +140,11 @@ def test_discrete():
         # Now compare the percentage values
         for k, v in check_variable.items():
             perc = counts[k] / n_samples
-            print(f"Discrete value: {k}, got: {perc}, expected {v}")
 
-            if not np.isclose(perc, v, 0.05):
-                print("Failed")
+            if not np.isclose(perc, v, atol=0.05):
+                print(f"Failed {k}, got: {perc}, expected {v}\n")
                 return False
-    print("Passed")
+    print("Passed\n")
     return True
 
 
@@ -176,21 +176,63 @@ def test_bins():
         bin_loc = sample_bin_variable(check_bins)
 
         # Convert back to the bin id
-        bin = int(np.floor((bin_loc - check_bins["start"]) / bin_width))
+        bin_index = int(np.floor((bin_loc - check_bins["start"]) / bin_width))
         # Add one to that
-        counts[bin] += 1
+        counts[bin_index] += 1
 
     # All of the percentage values should be the same
     perc_expected = 1.0 / check_bins["n bins"]
     for i, count in enumerate(counts):
         perc_found = count / n_samples
         bin_loc = check_bins["start"] + (i + 0.5) * bin_width
-        print(f"Bin loc {bin_loc} perc {perc_found} expected {perc_expected}")
 
-        if not np.isclose(perc_found, perc_expected, 0.05):
-            print("Failed")
+        if not np.isclose(perc_found, perc_expected, atol=0.05):
+            print(f"Failed bin check {bin_loc}, got {perc_found}, expected {perc_expected}\n")
             return False
-    print("Passed")
+    print("Passed\n")
+    return True
+
+
+# ----------------------------- Gaussian ------------------------------
+#
+# This is a generic Gaussian noise variable - I'm including it here because you'll need it in subsequent assignments.
+#  But it's basically "store mu and sigma, then use those to generate noise"
+def sample_gaussian_variable(info_variable):
+    """Return a sample from the Gaussian
+    @param info_variable - mu and sigma
+    @return A sample from the Gaussian"""
+
+    # Call random.normal here
+# YOUR CODE HERE
+
+
+def test_gaussian(b_print=True):
+    """Test the gaussian distribution by seeing if the mean/sd are the same
+    @param b_print print out test results y/n
+    """
+    if b_print:
+        print("Testing Gaussian")
+    # Provide mu and sigma
+    check_gaussian = {"mu": 1.2, "sigma": 0.2}
+
+    n_samples = 50000
+    # This does the for loop "in one line" - read this as
+    #   for _ in range()
+    #       sample_gaussian...
+    samples = [sample_gaussian_variable(check_gaussian) for _ in range(0, n_samples)]
+
+    # Should get out same mu/sigma
+    samples_mean = np.mean(samples)
+    samples_sigma = np.std(samples)
+
+    if not np.isclose(samples_mean, check_gaussian["mu"], atol=0.05):
+        raise ValueError(f"Failed Gaussian, expected {check_gaussian['mu']}, got {samples_mean}")
+
+    if not np.isclose(samples_sigma, check_gaussian['sigma'], atol=0.05):
+        raise ValueError(f"Failed Gaussian, expected {check_gaussian['sigma']}, got {samples_sigma}\n")
+
+    if b_print:
+        print("Passed\n")
     return True
 
 
@@ -242,7 +284,7 @@ class SampleProbabilityMassFunction:
 
     def _generate_counts(self, n_samples):
         """ Generate n samples
-        @param n_samples - number of samples
+        @param n_samples - number of samples per bin
         @returns a numpy array with the counts for each bin, normalized"""
 
         # Counts
@@ -250,7 +292,7 @@ class SampleProbabilityMassFunction:
 
         # Make sure to take enough samples for all of the bins...
         bin_width = self.bin_centers[1] - self.bin_centers[0]
-        for _ in range(0, self.bin_centers.shape[0] * 100):
+        for _ in range(0, self.bin_centers.shape[0] * n_samples):
             x_value = self.generate_sample()
             bin_index = np.ceil((x_value - self.bin_centers[0]) / bin_width)
             counts[int(bin_index)] += 1.0
@@ -269,16 +311,15 @@ class SampleProbabilityMassFunction:
         # Normalize
         expected_probs /= np.sum(expected_probs)
 
-        counts = self._generate_counts(100 * self.bin_centers.shape[0])
+        # Generate counts (the blue x's in the plot)
+        counts = self._generate_counts(100)
 
         for exp, c in zip(expected_probs, counts):
-            print(f"pmf perc {c} expected {exp}")
-
             if np.abs(exp - c) > 0.1:
-                print("Failed")
+                print(f"Failed pmf perc {c} expected {exp}\n")
                 return False
 
-        print("Passed")
+        print("Passed\n")
         return True
 
 
@@ -289,14 +330,17 @@ def pdf(x):
     return (x+1) ** 2 + 0.1
 
 
-def test_pmf():
+def test_and_plot_pmf():
+    """ Test the pmf by creating a function, passing it to the class, then checking the result
+    This code also plots the original function, the function chopped up into bins, then the number of
+    samples that fall into each bin. Visual check."""
     # Make the class
     x_min = -2.0
     x_max = 1.0
     n_bins = 10
-    print("Sample pmf")
+    print("Testing sample pmf")
     my_sample = SampleProbabilityMassFunction(pdf, (x_min, x_max), n_bins)
-    print(f"Passed test: {my_sample.test_self(pdf)}")
+    my_sample.test_self(pdf)
 
     # Plot the results
     _, axs = plt.subplots(1, 2)
@@ -319,14 +363,17 @@ def test_pmf():
 if __name__ == '__main__':
     # Check if each method is correct
     # Note: This should return true and print out passed. However, sometimes the random number generator will not be
-    #  your friend and it will fail - you're expecting the count to come out around 0.6 +- noise
-    print(f"Boolean result: {test_boolean()}")
+    #  your friend and it will fail - you're expecting the count to come out around 0.6 +- noise.
+    test_boolean()
 
     # Note, this is a little slow
-    print(f"Discrete result: {test_discrete()}")
+    test_discrete()
 
-    print(f"Bin result: {test_bins()}")
+    test_bins()
 
-    print(f"Pmf result: {test_pmf()}")
+    test_gaussian()
+
+    # This one is optional
+    test_and_plot_pmf()
 
     print("Done\n")
