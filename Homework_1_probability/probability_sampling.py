@@ -152,7 +152,9 @@ def test_discrete():
 #
 # This is actually a special case of the previous function - just that we don't explicitly label the bins; instead
 # the labels are set to the value at the center of the bin. Rather than specifying unique labels for each bin,
-# just provide the start/stop boundaries and the number of divisions. Assumes all bins are equally likely
+# just provide the start/stop boundaries and the number of divisions. Assumes all bins are equally likely.
+#
+# Do NOT use a loop for this - calculate the bin directly.
 def sample_bin_variable(info_variable):
     """Return the bin the sensor value lies in
     @param info_variable - bin start and stop, number of bins
