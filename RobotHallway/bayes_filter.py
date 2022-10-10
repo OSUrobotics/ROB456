@@ -145,7 +145,7 @@ def test_bayes_filter_sensor_update(b_print=True):
     robot_sensor.set_door_sensor_probabilites(probs[0], probs[1])
 
     # The sequences to try. You can add more if you'd like. The first two check the True and False cases
-    seqs = [['True'], ['False'], ['True', 'True', 'False']]
+    seqs = [[True], [False], [True, True, False]]
     for seq in seqs:
         # Double check that you're starting off with uniform probabilities
         bayes_filter.reset_probabilities(n_bins)
@@ -255,7 +255,7 @@ def test_move_update(b_print=True):
 
 
 if __name__ == '__main__':
-    b_print = False
+    b_print = True
     test_bayes_filter_sensor_update(b_print)
     test_move_one_direction(b_print)
 
