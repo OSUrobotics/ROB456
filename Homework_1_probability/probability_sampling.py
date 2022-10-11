@@ -56,11 +56,12 @@ def sample_boolean_variable(info_variable):
     if info_variable["prob_return_true"] < 0.0 or info_variable["prob_return_true"] > 1.0:
         ValueError(f"Value {info_variable['prob_return_true']} not between zero and one")
 
-    # First, use random.uniform to generate a number between 0 and one. Note that this is a uniform distribution, not
-    #  a Gaussian one
+    # This uses random.uniform to generate a number between 0 and one. Note that this is a uniform distribution, not
+    #  a Gaussian one (every value equally likely)
     zero_to_one = random.uniform()
 
     # See slides - if the random variable is below the probability of returning true, return true. Otherwise, return false
+    # TODO: Return True or False
 # YOUR CODE HERE
 
 
@@ -93,12 +94,19 @@ def test_boolean(test_prob_value=0.6):
 # -------------------------------- Discrete -----------------------------------------------------
 #
 # A list of discrete variables and their corresponding likelihood
-#   Because we need one value for each variable, and a name for each variable, store this as name/probabilty pair
+#   Because we need one value for each variable, and a name for each variable, store this as name, probabilty key,value pair
+# If you have forgotten how to do dictionaries, go do the tutorial on dictionaries before attempting this problem
+# Hint: You want the .items() iterator. If you don't know what that is, or don't know what a key, value pair is,
+#   go do the tutorial.
 def sample_discrete_variable(info_variable):
     """ Generate one sample from the given discrete variable distribution
+    Your code should NOT need to know what the actual keys are, how many there are, or what
+    the actual values are - i.e., your code should NOT include things like
+             if key == "True" or if z < 0.8
     @param info_variable contains pairs of values with probabilities. Probabilites should sum to one
     @returns one of the discrete values (keys) in the dictionary """
 
+    # First, I'll do some checks for you
     for v in info_variable.values():
         # Probabilities have to be between 0 and 1...
         if v < 0.0 or v > 1.0:
@@ -108,17 +116,23 @@ def sample_discrete_variable(info_variable):
     if not np.isclose(sum(info_variable.values()), 1.0, atol=1.0):
         ValueError(f"Sum of probabilities should be 1, is {sum(info_variable.values())}")
 
-    # First, use random to generate a number between 0 and one
+    # Now, use random to generate a number between 0 and one
     zero_to_one = random.uniform()
 
     # See slides - "stack" the probabilities - if the value lies in the discrete value's stack, return that one
     #  needs a for loop
-    # As an intermediate step, try writing this with the three discrete variable with an if-elif-else statement
+    # You should use a FOR loop. If you're struggling with the FOR loop, try writing this with an if - else if -else if
+    #  for JUST the syntax test case - it won't work for test_discrete
+    #
+    # TODO - return one of the key values in the dictionary.
 # YOUR CODE HERE
 
 
 def test_discrete():
     print("Testing discrete, three cases")
+    # The following for loop will loop through each of these in turn. It is NOT doing them all at the
+    #  same time - the first time through the for loop it will check the boolean case, the second time
+    #  the red, green, blue, the third time the quad one
     check_boolean = {"True": 0.6, "False": 0.4}
     check_discrete_tri = {"red": 0.2, "green": 0.5, "blue": 0.3}
     check_discrete_quad = {"kitchen": 0.2, "living room": 0.3, "dining room": 0.3, "bed room": 0.2}
@@ -152,15 +166,23 @@ def test_discrete():
 #
 # This is actually a special case of the previous function - just that we don't explicitly label the bins; instead
 # the labels are set to the value at the center of the bin. Rather than specifying unique labels for each bin,
-# just provide the start/stop boundaries and the number of divisions. Assumes all bins are equally likely.
+# just provide the start/stop boundaries and the number of divisions. Assumes all bins are equally likely
 #
-# Do NOT use a loop for this - calculate the bin directly.
+# Your solution should NOT have a loop in it - you should be able to calculate which bin zero_to_one lies in
+#  directly (see np.floor(x)).
 def sample_bin_variable(info_variable):
-    """Return the bin the sensor value lies in
+    """Return the center location of the bin the sensor value lies in
     @param info_variable - bin start and stop, number of bins
-    @return The value associated with the bin"""
+    @return The value (center) associated with the bin"""
 
+    # Returns a number from 0 to 1
     zero_to_one = random.uniform()
+
+    # TODO:
+    #  Step 1: Calculate the size of each bin ON THE UNIT INTERVAL
+    #  Step 2: Use np.floor to find the INDEX of the bin
+    #  Step 3: Calculate the center of the bin with that index on the (start, stop) interval
+    # Note: You could find the index of the bin on the (start,stop) interval, but that requires more math...
 # YOUR CODE HERE
 
 
@@ -204,7 +226,7 @@ def sample_gaussian_variable(info_variable):
     @param info_variable - mu and sigma
     @return A sample from the Gaussian"""
 
-    # Call random.normal here
+    # TODO: Call random.normal here and return a number
 # YOUR CODE HERE
 
 
@@ -260,6 +282,10 @@ class SampleProbabilityMassFunction:
         @param x_range - min and max x values as a tuple
         @param n_bins - number of bins """
 
+        # TODO - Initialize correctly
+        #  Where the bins start and end
+        #  The amount of probability to put in each bin
+        #  The running sum
 # YOUR CODE HERE
         # Where the center of each bin is (see sample_bin_variable above)
         self.bin_centers = np.zeros(n_bins)
@@ -282,6 +308,7 @@ class SampleProbabilityMassFunction:
         # You want the i where bin_sum[i] <= zero_to_one < bin_sum[i+1]
         # Not fancy version: Use a for loop
         # Fancy version: Use np.where
+        # TODO - return correct bin center
 # YOUR CODE HERE
 
     def _generate_counts(self, n_samples):
@@ -364,18 +391,59 @@ def test_and_plot_pmf():
 
 if __name__ == '__main__':
     # Check if each method is correct
+
+    # ------------------ Boolean ----------------------
+    # First, check that you have no obvious syntax errors
+    boolean_variable = {"prob_return_true": 0.7}
+    ret_val = sample_boolean_variable(boolean_variable)
+    if ret_val is True or ret_val is False:
+        print("sample_boolean: Passed syntax check")
+
     # Note: This should return true and print out passed. However, sometimes the random number generator will not be
     #  your friend and it will fail - you're expecting the count to come out around 0.6 +- noise.
     test_boolean()
 
+    # ------------------ Discrete ----------------------
+    # Syntax check - does your code run and return a key?
+    check_discrete_tri = {"red": 0.2, "green": 0.5, "blue": 0.3}
+    ret_value = sample_discrete_variable(check_discrete_tri)
+    if ret_value == "red" or ret_value == "green" or ret_value == "blue":
+        print("Discrete: Passed syntax check")
     # Note, this is a little slow
     test_discrete()
 
+    # ------------------ bins ----------------------
+    # Checking the syntax of the call
+    check_bins = {"start": -2.0, "stop": 3.0, "n bins": 10}
+    bin_loc = sample_bin_variable(check_bins)
+    if check_bins["start"] < bin_loc < check_bins["stop"]:
+        print("bin sampling: return value is in correct range")
+
+    # Now check probabilities
     test_bins()
+
+    # ------------------ Gaussian ----------------------
+    # Checking syntax of call
+    check_gaussian = {"mu": 1.2, "sigma": 0.2}
+    sample = sample_gaussian_variable(check_gaussian)
+    print(f"Sample value should be a number: {sample}")
 
     test_gaussian()
 
+    # ------------------ PMF plot ----------------------
     # This one is optional
+    # Syntax check
+    x_min = -2.0
+    x_max = 1.0
+    n_bins = 10
+
+    # Make the class
+    my_sample = SampleProbabilityMassFunction(pdf, (x_min, x_max), n_bins)
+    # Generate a sample
+    ret_value = my_sample.generate_sample()
+    if x_min < ret_value < x_max:
+        print("PMF: Passed syntax check")
+
     test_and_plot_pmf()
 
     print("Done\n")

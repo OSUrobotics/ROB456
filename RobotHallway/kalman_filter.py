@@ -33,6 +33,7 @@ class KalmanFilter:
         @param robot_sensors - for mu/sigma of wall sensor
         @param dist_reading - distance reading returned by sensor"""
 
+        # TODO: Calculate C and K, then update self.mu and self.sigma
 # YOUR CODE HERE
         return self.mu, self.sigma
 
@@ -43,11 +44,11 @@ class KalmanFilter:
         @param amount : The control signal (the amount the robot was requested to move
         @return : mu and sigma of new current estimated location """
 
+        # TODO: Update mu and sigma by Ax + Bu equation
 # YOUR CODE HERE
         return self.mu, self.sigma
 
 
-# YOUR CODE HERE
 
 
 def test_kalman_update(b_print=True):
@@ -104,6 +105,22 @@ def test_kalman_update(b_print=True):
 
 if __name__ == '__main__':
 
+    # Syntax checks
+    kalman_filter = KalmanFilter()
+    robot_ground_truth = RobotGroundTruth()
+    robot_sensor = RobotSensors()
+
+    # Set mu/sigmas
+    sensor_noise = {"mu": 0.0, "sigma": 0.1}
+    move_error = {"mu": 0.0, "sigma": 0.05}
+    robot_ground_truth.set_move_continuos_probabilities(move_error["sigma"])
+    robot_sensor.set_distance_wall_sensor_probabilities(sensor_noise["sigma"])
+
+    kalman_filter.update_gauss_sensor_reading(robot_sensor, 0.1)
+    kalman_filter.update_continuous_move(robot_ground_truth, 0.0)
+
+
+    # Generate some move sequences and compare to the correct answer
     test_kalman_update()
 
     print("Done")

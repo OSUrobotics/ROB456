@@ -15,10 +15,18 @@ class RobotSensors:
         #   door is if the robot is in front of the door, return True/False
         #   no_door is if the robot is NOT in front of a door, return True/False
         #   distance_wall - returns a distance (with noise)
+        # Bayes filter:
+        #  TODO: Create a dictionary that has two dictionaries in it (one for door, one for no door)
+        #    The actual dictionaries will be set in set_door_sensor_probabilities
+        # Kalman filter:
+        #  TODO: Add another dictionary for the distance to the wall sensor noise
+        # Note: The actual values in the dictionaries will be set in the calls to set_* below
+        # Second note: all variables should be referenced with self. or they will disappear
 # YOUR CODE HERE
 
         # In the GUI version, these will be called with values from the GUI after the RobotSensors instance
         #   has been created
+        # Actually SET the values for the dictionaries
         self.set_door_sensor_probabilites()
         self.set_distance_wall_sensor_probabilities()
 
@@ -28,7 +36,9 @@ class RobotSensors:
         @param in_prob_see_door_if_not_door - probability of seeing a door if there is NOT one
         """
         # Bayes assignment
-
+        # TODO: Store the input values in TWO dictionaries (one for the door there, one for no door)
+        #  Reminder: You should have created the dictionary to hold the dictionaries in the __init__ method above
+        #  Second note: all variables should be referenced with self.
 # YOUR CODE HERE
 
     def set_distance_wall_sensor_probabilities(self, sigma=0.1):
@@ -37,6 +47,7 @@ class RobotSensors:
         @param sigma - sigma of noise"""
 
         # Kalman assignment
+        # TODO: Store the mean and standard deviation
 # YOUR CODE HERE
 
     def query_door(self, robot_gt, world_gt):
@@ -47,10 +58,18 @@ class RobotSensors:
         """
 
         # Bayes assignment
-        # This is the ground truth - True if robot is actually in front of the door, False other wise
+        # I've handled the checking if the robot is in front of the door (y/n) part for you
+        # This is the ground truth - True if robot is actually in front of the door, False otherwise
         #  Use this to determine which probabilities to use
+        # is_in_front_of_door is a Boolean, world_gt has the actual doors, robot_gt has the actual robot location (in 0,1)
         is_in_front_of_door = world_gt.is_location_in_front_of_door(robot_gt.robot_loc)
 
+        # TODO
+        #  This is the place where you need a 4-way if statement
+        #   First if statement: Is the robot in front of the door?
+        # STEP 1 - generate a random number between 0 and 1
+        # STEP 2 - use the random number (and your first if statement) to determine if you should return True or False
+        # Note: This is just the sample_boolean code from your probabilities assignment
 # YOUR CODE HERE
 
     def query_distance_to_wall(self, robot_gt):
@@ -61,6 +80,8 @@ class RobotSensors:
         @return distance + noise """
 
         # Kalman assignment
+        # TODO: Return the distance to the wall (with noise)
+        #  This is the Gaussian assignment from your probabilities homework
 # YOUR CODE HERE
 
 
@@ -146,5 +167,28 @@ def test_continuous_sensor(b_print=True):
 
 if __name__ == '__main__':
     b_print = True
+
+    # ----------------------- Bayes filter -----------------
+    # Syntax check
+    robot_gt = RobotGroundTruth()
+    world_gt = WorldGroundTruth()
+    robot_sensor = RobotSensors()
+
+    probs_see_door = (0.7, 0.2)
+    robot_sensor.set_door_sensor_probabilites(probs_see_door[0], probs_see_door[1])
+    ret_value = robot_sensor.query_door(robot_gt, world_gt)
+    if ret_value is True or ret_value is False:
+        print("Passed robot sensor syntax check")
+
     test_discrete_sensors(b_print)
+
+    # ----------------------- Kalman filter -----------------
+    # Syntax check
+    robot_gt = RobotGroundTruth()
+    robot_sensor = RobotSensors()
+    robot_sensor.set_distance_wall_sensor_probabilities(sigma=0.01)
+    dist_with_noise = robot_sensor.query_distance_to_wall(robot_gt)
+    if 0.0 < dist_with_noise < 1.0:
+        print("Dist wall sensor, passed syntax test")
+
     test_continuous_sensor(b_print)

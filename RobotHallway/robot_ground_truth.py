@@ -32,28 +32,34 @@ class RobotGroundTruth:
         # Default move probabilities, stored as dictionaries (see probabilities homework)
         #    move_left and move_right are discrete probabilities, with three cases - move left, move right, or hold still
         #    move_continuous is a Gaussian - store the standard deviation
+        # This is a variable (dictionary) with three dictionaries in it
+        #  In set_move_* below, you will set what each dictionary is (they're currently empty)
         self.move_probabilities = {"move_left": {}, "move_right": {}, "move_continuous": {}}
 
         # In the GUI version, these will be called with values from the GUI
+        #    These will set the individual dictionaries
         self.set_move_left_probabilities()
         self.set_move_right_probabilities()
         self.set_move_continuos_probabilities()
 
     def reset_location(self):
-        """ Put robot in the middle"""
+        """ Put robot in the middle of the hallway"""
         self.robot_loc = 0.5
 
     def place_random(self):
-        """ Put robot in a random location"""
+        """ Put robot in a random location in the hallway """
         self.robot_loc = np.random.uniform()
 
     def set_move_left_probabilities(self, move_left=0.8, move_right=0.05):
         """ Set the three discrete probabilities for moving left (should sum to one and all be positive)
+
         @param move_left - the probability of actually moving left
         @param move_right - the probability of actually moving right """
 
         # Bayes assignment
-        # Set self.move_probabilities["move_left"] dictionary
+        # TODO
+        #   Set self.move_probabilities["move_left"] = {...} to be a dictionary with the above probabilities
+        #     Yes, you can store dictionaries in dictionaries
         # Check that the probabilities sum to one and are between 0 and 1
 
 # YOUR CODE HERE
@@ -64,7 +70,9 @@ class RobotGroundTruth:
         @param move_right - the probability of actually moving right """
 
         # Bayes assignment
-        # Set self.move_probabilities["move_right"] dictionary
+        # TODO
+        #   Set self.move_probabilities["move_right"] = {...} to be a dictionary with the above probabilities
+        #     Yes, you can store dictionaries in dictionaries
         # Check that the probabilities sum to one and are between 0 and 1
 
 # YOUR CODE HERE
@@ -75,7 +83,8 @@ class RobotGroundTruth:
         @param sigma - standard deviation of noise"""
 
         # Kalman assignment
-        # Set self.move_probabilities["move_continuous"] dictionary
+        # TODO
+        #   Set self.move_probabilities["move_continuous"] = {...} to be a dictionary with the above probabilities
         # Check that sigma is positive
 
 # YOUR CODE HERE
@@ -122,11 +131,14 @@ class RobotGroundTruth:
         @return The amount actually moved """
 
         # Bayes assignment
-        # Set step_dir to -1 (left), 0 (stay put) or 1 (right) based on sampling the move_left variable
+        # TODO
+        #  Set step_dir to -1 (left), 0 (stay put) or 1 (right) based on sampling the move_left variable
         step_dir = 0
 
 # YOUR CODE HERE
 
+        # This returns the actual move amount, clamped to 0, 1
+        #   i.e., don't run off the end of the hallway
         return self._move_clamped_discrete(step_dir * step_size)
 
     def move_right(self, step_size):
@@ -156,6 +168,7 @@ class RobotGroundTruth:
         # Actually move (don't run off of end)
         return self._move_clamped_continuous(noisy_amount)
 
+
 def test_discrete_move_functions(b_print=True):
     """ Check that moving all the way left (or right) pushes the robot to the left (or right)
     @param b_print - do print statements, yes/no"""
@@ -176,6 +189,8 @@ def test_discrete_move_functions(b_print=True):
         if b_print:
             print(f"Checking move_{dir_move} function")
         for i in range(0, n_moves):
+            # This will call one of rgt.move_left or rgt.move_right with step_size
+            # If you get an error/it dies here, then it's probably dying in one of those two methods
             mf(step_size)
             if rgt.robot_loc < 0:
                 raise ValueError(f"Robot went off end of left wall {rgt.robot_loc}")
@@ -253,7 +268,30 @@ def test_continuous_move_functions(b_print=True):
 
 if __name__ == '__main__':
     b_print = True
+
+    # Syntax check of your code
+    robot_gt = RobotGroundTruth()
+    robot_gt.set_move_left_probabilities(0.3, 0.5)
+    ret_value = robot_gt.move_left(0.1)
+    if 0.49 < ret_value < 0.61:
+        print(f"Robot ground truth: Passed move left syntax check")
+
+    robot_gt.reset_location()
+    robot_gt.set_move_right_probabilities(0.2, 0.1)
+    ret_value = robot_gt.move_right(0.1)
+    if 0.49 < ret_value < 0.61:
+        print(f"Robot ground truth: Passed move right syntax check")
+
+    # For Bayes filter
     test_discrete_move_functions(b_print)
+
+    # For Kalman/particle filter
+    robot_gt.reset_location()
+    robot_gt.set_move_continuos_probabilities(0.2)
+    ret_value = robot_gt.move_continuous(0.0)
+    if 0.49 < ret_value < 0.61:
+        print(f"Robot ground truth: Passed move continuous check")
+
     test_continuous_move_functions(b_print)
 
     print("Done")

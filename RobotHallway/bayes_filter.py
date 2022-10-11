@@ -25,6 +25,8 @@ class BayesFilter:
     def reset_probabilities(self, n_bins=10):
         """ Initialize discrete probability resolution with uniform distribution
         @param n_bins - the number of bins to divide the unit interval (0,1) up into """
+
+        # TODO create an array with n_bins, set to uniform distribution
 # YOUR CODE HERE
 
     def update_belief_sensor_reading(self, world_ground_truth, robot_sensor, sensor_reading):
@@ -39,6 +41,14 @@ class BayesFilter:
         # Don't forget to normalize - that's the divide by nu part. This is because all of the denominators in the
         #  update have the same value (which, conveniently, is the sum of the numerators)
 
+        # TODO
+        #  You'll need a for loop to loop over the bins
+        #  For each bin, calculate p(y|x) p(x) (the numerator of the Bayes sensor update)
+        #     p(x) is the value stored in self.probabilities[i]
+        #     p(y|x) is the 4-way if statement: In front of door, y/n, sensor T/F
+        #     You'll need to know if the bin is in front of the door or not to compute this
+        # You might find enumerate useful
+        #  for i, p in enumerate(self.probabilities):
 # YOUR CODE HERE
 
     def update_belief_move_left(self, robot_ground_truth):
@@ -256,6 +266,27 @@ def test_move_update(b_print=True):
 
 if __name__ == '__main__':
     b_print = True
+
+    # Syntax checks
+    n_doors = 2
+    n_bins = 10
+    world_ground_truth = WorldGroundTruth()
+    world_ground_truth.random_door_placement(n_doors, n_bins)
+    robot_sensor = RobotSensors()
+    bayes_filter = BayesFilter()
+    robot_ground_truth = RobotGroundTruth()
+
+    # Syntax check 1, reset probabilities
+    bayes_filter.reset_probabilities(n_bins)
+
+    # Syntax check 2, update sensor
+    bayes_filter.update_belief_sensor_reading(world_ground_truth, robot_sensor, True)
+
+    # Syntax check 3, move
+    bayes_filter.update_belief_move_left(robot_ground_truth)
+    bayes_filter.update_belief_move_right(robot_ground_truth)
+
+    # The tests
     test_bayes_filter_sensor_update(b_print)
     test_move_one_direction(b_print)
 
