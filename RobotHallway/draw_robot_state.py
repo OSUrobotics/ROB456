@@ -388,9 +388,9 @@ class StateEstimationGUI(QMainWindow):
         self.setWindowTitle('State Estimation')
 
         # Set this to whichever homework you're doing
-        # self.which_filter = "Bayes"
+        self.which_filter = "Bayes"
         # self.which_filter = "Kalman"
-        self.which_filter = "Particle"
+        # self.which_filter = "Particle"
 
         # Control buttons for the interface
         left_side_layout = self._init_left_layout_()
