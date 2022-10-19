@@ -12,6 +12,7 @@ from RobotHallway.robot_ground_truth import RobotGroundTruth
 from RobotHallway.robot_sensors import RobotSensors
 from RobotHallway.bayes_filter import BayesFilter
 from RobotHallway.kalman_filter import KalmanFilter
+from RobotHallway.particle_filter import ParticleFilter
 
 # A helper class that implements a slider with given start and end float value; displays values
 class SliderFloatDisplay(QWidget):
@@ -62,6 +63,10 @@ class SliderFloatDisplay(QWidget):
         if SliderFloatDisplay.gui is not None:
             SliderFloatDisplay.gui.update_simulation_parameters()
         self.display.setText('{0}: {1:.3f}'.format(self.name, self.value()))
+        try:
+            self.gui.repaint()
+        except AttributeError:
+            pass
 
     # Use this to change the value (does clamping)
     def set_value(self, value_f):
@@ -160,6 +165,7 @@ class DrawRobotAndWalls(QWidget):
         # For robot state estimation - the three different methods
         self.bayes_filter = BayesFilter()
         self.kalman_filter = KalmanFilter()
+        self.particle_filter = ParticleFilter()
 
         # For keeping sampled error
         self.last_wall_sensor_noise = 0
@@ -187,6 +193,7 @@ class DrawRobotAndWalls(QWidget):
         return QSize(self.width, self.height)
 
     # Gaussian function
+    @staticmethod
     def gaussian(x, mu, sigma):
         """Gaussian with given mu, sigma
         @param x - the input x value
@@ -205,6 +212,8 @@ class DrawRobotAndWalls(QWidget):
             self.draw_probabilities(qp)
         elif self.gui.which_filter is "Kalman":
             self.draw_robot_gauss(qp)
+        elif self.gui.which_filter is "Particle":
+            self.draw_particles(qp)
 
         if self.gui.which_filter is not "Bayes":
             self.draw_move_gauss(qp)
@@ -261,6 +270,18 @@ class DrawRobotAndWalls(QWidget):
         for i, p in enumerate(self.bayes_filter.probabilities):
             qp.drawLine(self.x_map(i * div), self.y_map(self.draw_height * p), self.x_map((i + 1) * div), self.y_map(self.draw_height * p))
 
+    def draw_particles(self, qp):
+        pen = QPen(Qt.black, 1, Qt.SolidLine)
+        qp.setPen(pen)
+
+        min_ws = np.min(self.particle_filter.weights)
+        max_ws = np.max(self.particle_filter.weights)
+        if np.isclose(max_ws, min_ws):
+            max_ws = min_ws + 0.01
+        for p, w in zip(self.particle_filter.particles, self.particle_filter.weights):
+            h = 0.1 * (w - min_ws) / (max_ws - min_ws) + 0.05
+            qp.drawLine(self.x_map(p), self.y_map(0.05), self.x_map(p), self.y_map(h))
+
     def draw_world(self, qp):
         pen = QPen(Qt.black, 3, Qt.SolidLine)
         qp.setPen(pen)
@@ -291,7 +312,7 @@ class DrawRobotAndWalls(QWidget):
         qp.setPen(pen)
 
         dx = np.linspace(0, 1, 200)
-        dy = self.gaussian(dx, self.robot_ground_truth.robot_loc, self.gui.prob_sigma.value())
+        dy = self.gaussian(dx, self.robot_ground_truth.robot_loc, self.gui.prob_query_wall_sigma.value())
 
         pts = []
         # Protect against sd set to zero/NaN
@@ -309,13 +330,14 @@ class DrawRobotAndWalls(QWidget):
         qp.drawLine(QPoint(self.x_map(self.robot_ground_truth.robot_loc + self.last_wall_sensor_noise), self.y_map(self.draw_height + 0.1)),
                     QPoint(self.x_map(self.robot_ground_truth.robot_loc + self.last_wall_sensor_noise), self.y_map(self.draw_height + 0.045)))
 
-    # Wall sensor distribution
+    # Movement distribution
     def draw_move_gauss(self, qp):
         pen = QPen(Qt.gray, 1, Qt.DashLine)
         qp.setPen(pen)
 
         dx = np.linspace(0, 1, 200)
-        dy = self.gaussian(dx, self.robot_ground_truth.robot_loc, self.gui.move_continuous.value())
+        loc = self.robot_ground_truth.robot_loc + self.gui.move_continuous_amount.value()
+        dy = self.gaussian(dx, loc, self.gui.prob_move_sigma.value())
 
         pts = []
         # Protect against sd set to zero/NaN
@@ -366,9 +388,9 @@ class StateEstimationGUI(QMainWindow):
         self.setWindowTitle('State Estimation')
 
         # Set this to whichever homework you're doing
-        self.which_filter = "Bayes"
+        # self.which_filter = "Bayes"
         # self.which_filter = "Kalman"
-        # self.which_filter = "Particle"
+        self.which_filter = "Particle"
 
         # Control buttons for the interface
         left_side_layout = self._init_left_layout_()
@@ -405,6 +427,11 @@ class StateEstimationGUI(QMainWindow):
         if self.which_filter is "Bayes":
             self.n_bins = SliderIntDisplay('Number bins', 10, 30, 10)
             resets_layout.addWidget(self.n_bins)
+        elif self.which_filter is "Particle":
+            self.n_bins = SliderIntDisplay('Number bins', 10, 30, 10)
+            resets_layout.addWidget(self.n_bins)
+            self.n_samples = SliderIntDisplay('Number samples', 10, 1000, 100)
+            resets_layout.addWidget(self.n_samples)
 
         # This one is valid no matter which filter we're doing
         reset_simulation_button = QPushButton('Reset simulation')
@@ -450,6 +477,12 @@ class StateEstimationGUI(QMainWindow):
             move_continuous_button.clicked.connect(self.move_continuous)
             s_and_a_layout.addWidget(move_continuous_button)
 
+            if self.which_filter is "Particle":
+                importance_weight = QPushButton('Do importance weighting')
+                importance_weight.clicked.connect(self.importance_weight)
+                s_and_a_layout.addWidget(importance_weight)
+
+
         s_and_a.setLayout(s_and_a_layout)
 
         # The parameters of the world we're simulating
@@ -465,11 +498,11 @@ class StateEstimationGUI(QMainWindow):
             parameter_layout.addWidget(self.prob_see_door_if_not_door)
 
         if self.which_filter is not "Bayes":
-            self.prob_query_wall_mu = SliderFloatDisplay('Prob distance mu', -0.1, 0.1, 0.0)
             self.prob_query_wall_sigma = SliderFloatDisplay('Prob distance sigma', 0.001, 0.3, 0.01)
+            self.prob_move_sigma = SliderFloatDisplay('Prob move sigma', 0.001, 0.01, 0.005)
 
-            parameter_layout.addWidget(self.prob_query_wall_mu)
             parameter_layout.addWidget(self.prob_query_wall_sigma)
+            parameter_layout.addWidget(self.prob_move_sigma)
 
         # Now actions
         if self.which_filter is "Bayes":
@@ -482,9 +515,12 @@ class StateEstimationGUI(QMainWindow):
             parameter_layout.addWidget(self.prob_move_right_if_left)
             parameter_layout.addWidget(self.prob_move_right_if_right)
             parameter_layout.addWidget(self.prob_move_left_if_right)
-        else:
-            self.prob_move_mu = SliderFloatDisplay('Prob move mu', -0.1, 0.1, 0.0)
-            self.prob_move_sigma = SliderFloatDisplay('Prob move sigma', 0.001, 0.01, 0.005)
+
+        # Continuous move amount
+        if not self.which_filter is "Bayes":
+            self.move_continuous_amount = SliderFloatDisplay('Amount move', -0.1, 0.1, 0.0)
+
+            parameter_layout.addWidget(self.move_continuous_amount)
 
         parameters.setLayout(parameter_layout)
 
@@ -496,15 +532,6 @@ class StateEstimationGUI(QMainWindow):
         left_side_layout.addWidget(s_and_a)
         left_side_layout.addStretch()
         left_side_layout.addWidget(parameters)
-
-        # Continous move amount
-        if not self.which_filter is "Bayes":
-            move_values = QGroupBox('How much to move')
-            move_values_layout = QVBoxLayout()
-            self.move_continuous_amount = SliderFloatDisplay('Amount move', -0.1, 0.1, 0.0)
-            move_values_layout.addWidget(self.move_continuous_amount)
-
-            left_side_layout.addWidget(move_values)
 
         return left_side_layout
 
@@ -529,13 +556,19 @@ class StateEstimationGUI(QMainWindow):
         if self.which_filter is "Bayes":
             self.robot_scene.bayes_filter.reset_probabilities(self.n_bins.value())
             self.robot_scene.robot_ground_truth._adjust_middle_of_bin(self.n_bins.value())
+            self.robot_scene.world_ground_truth.random_door_placement(self.n_doors.value, self.n_bins.value())
         elif self.which_filter is "Kalman":
             self.robot_scene.kalman_filter.reset_kalman()
+        elif self.which_filter is "Particle":
+            self.robot_scene.particle_filter.reset_particles(self.n_samples.value())
 
         self.robot_scene.repaint()
 
     def random_doors(self):
-        self.robot_scene.world_ground_truth.random_door_placement(self.n_doors.value(), self.n_bins.value())
+        try:
+            self.robot_scene.world_ground_truth.random_door_placement(self.n_doors.value(), self.n_bins.value())
+        except AttributeError:
+            pass # Doing Kalman filter; no doors
         self.robot_scene.repaint()
 
     def update_simulation_parameters(self):
@@ -549,15 +582,23 @@ class StateEstimationGUI(QMainWindow):
             self.robot_scene.robot_sensors.set_door_sensor_probabilites(self.prob_see_door_if_door.value(),
                                                                         self.prob_see_door_if_not_door.value())
         if self.which_filter is not "Bayes":
-            self.robot_scene.robot_ground_truth.set_move_continuos_probabilities(self.prob_move_mu.value(), self.prob_move_sigma.value())
-            self.robot_scene.robot_sensors.set_distance_wall_sensor_probabilities(self.prob_distance_mu.value(), self.prob_distance_sigma.value())
+            self.robot_scene.robot_ground_truth.set_move_continuos_probabilities(self.prob_move_sigma.value())
+            self.robot_scene.robot_sensors.set_distance_wall_sensor_probabilities(self.prob_query_wall_sigma.value())
 
+        self.repaint()
+
+    def importance_weight(self):
+        """ Put robot in the middle of the hallway"""
+        self.robot_scene.particle_filter.resample_particles()
         self.repaint()
 
     def query_wall_sensor(self):
         # Do the sensor reading followed by the update
         dist_wall_z = self.robot_scene.robot_sensors.query_distance_to_wall(self.robot_scene.robot_ground_truth)
-        self.robot_scene.kalman_filter.update_gauss_sensor_reading(self.robot_scene.robot_sensors, dist_wall_z)
+        if self.which_filter is "Kalman":
+            self.robot_scene.kalman_filter.update_belief_distance_sensor_reading(self.robot_scene.robot_sensors, dist_wall_z)
+        elif self.which_filter is "Particle":
+            self.robot_scene.particle_filter.calculate_weights_distance_wall(self.robot_scene.robot_sensors, dist_wall_z)
 
         # Update the drawing to show where the sample was taken from
         dist_wall_actual = self.robot_scene.robot_ground_truth.robot_loc
@@ -570,9 +611,15 @@ class StateEstimationGUI(QMainWindow):
         # Do the sensor reading followed by the update
         returned_sensor_reading = self.robot_scene.robot_sensors.query_door(self.robot_scene.robot_ground_truth,
                                                                             self.robot_scene.world_ground_truth)
-        self.robot_scene.bayes_filter.update_belief_sensor_reading(self.robot_scene.world_ground_truth,
-                                                                   self.robot_scene.robot_sensors,
-                                                                   returned_sensor_reading)
+        if self.which_filter is "Bayes":
+            self.robot_scene.bayes_filter.update_belief_sensor_reading(self.robot_scene.world_ground_truth,
+                                                                       self.robot_scene.robot_sensors,
+                                                                       returned_sensor_reading)
+        elif self.which_filter is "Particle":
+            self.robot_scene.particle_filter.calculate_weights_door_sensor_reading(self.robot_scene.world_ground_truth,
+                                                                                   self.robot_scene.robot_sensors,
+                                                                                   returned_sensor_reading)
+
         b_was_door = self.robot_scene.world_ground_truth.is_location_in_front_of_door(self.robot_scene.robot_ground_truth.robot_loc)
         self.robot_scene.sensor_text = f"Door {b_was_door}, got {returned_sensor_reading}"
 
@@ -622,18 +669,22 @@ class StateEstimationGUI(QMainWindow):
         dist_wall_actual = self.robot_scene.robot_ground_truth.robot_loc
         self.robot_scene.last_wall_sensor_noise = dist_wall_actual - dist_wall_z
         self.robot_scene.loc_text = "Asked loc {0:0.2f}, got {1:0.2f}".format(dist_wall_actual, dist_wall_z)
-        self.robot_scene.kalman_filter.update_gauss_sensor_reading(self.robot_scene.world_ground_truth, dist_wall_z)
+        self.robot_scene.kalman_filter.update_belief_distance_sensor_reading(self.robot_scene.world_ground_truth, dist_wall_z)
 
         self.repaint()
 
-    def move_kalman(self):
+    def move_continuous(self):
         # Try to move the robot by the amount in the slider
-        amount_requested = self.move_gauss_amount.value()
+        amount_requested = self.move_continuous_amount.value()
         amount = self.robot_scene.robot_ground_truth.move_continuous(amount_requested)
         self.robot_scene.last_move_noise = amount - amount_requested
         self.robot_scene.move_text = "Asked move {0:0.4f}, moved {1:0.4f}".format(amount_requested, amount)
-        self.robot_scene.kalman_filter.update_continuous_move(self.robot_scene.robot_ground_truth,
-                                                                 self.move_gauss_amount.value())
+        if self.which_filter is "Kalman":
+            self.robot_scene.kalman_filter.update_continuous_move(self.robot_scene.robot_ground_truth,
+                                                                  self.move_continuous_amount.value())
+        elif self.which_filter is "Particle":
+            self.robot_scene.particle_filter.update_particles_move_continuous(self.robot_scene.robot_ground_truth,
+                                                                              self.move_continuous_amount.value())
 
         self.repaint()
 

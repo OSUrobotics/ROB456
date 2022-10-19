@@ -28,7 +28,7 @@ class KalmanFilter:
         self.sigma = 0.4
 
     # Sensor reading, distance to wall
-    def update_gauss_sensor_reading(self, robot_sensors, dist_reading):
+    def update_belief_distance_sensor_reading(self, robot_sensors, dist_reading):
         """ Update state estimation based on sensor reading
         @param robot_sensors - for mu/sigma of wall sensor
         @param dist_reading - distance reading returned by sensor"""
@@ -84,7 +84,7 @@ def test_kalman_update(b_print=True):
         for i, s in enumerate(seq["seq"]):
             if s == "Sensor":
                 dist = robot_sensor.query_distance_to_wall(robot_ground_truth)
-                kalman_filter.update_gauss_sensor_reading(robot_sensor, dist)
+                kalman_filter.update_belief_distance_sensor_reading(robot_sensor, dist)
                 if not np.isclose(dist, seq["sensor_reading"][i]):
                     print(f"Warning, sensor reading should be {seq['sensor_reading'][i]}, got {dist}")
             else:
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     robot_ground_truth.set_move_continuos_probabilities(move_error["sigma"])
     robot_sensor.set_distance_wall_sensor_probabilities(sensor_noise["sigma"])
 
-    kalman_filter.update_gauss_sensor_reading(robot_sensor, 0.1)
+    kalman_filter.update_belief_distance_sensor_reading(robot_sensor, 0.1)
     kalman_filter.update_continuous_move(robot_ground_truth, 0.0)
 
 
