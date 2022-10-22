@@ -256,41 +256,41 @@ if __name__ == '__main__':
     b_print = True
 
     # Syntax checks
-    n_doors = 2
-    n_bins = 10
-    n_samples = 100
-    world_ground_truth = WorldGroundTruth()
-    world_ground_truth.random_door_placement(n_doors, n_bins)
-    robot_ground_truth = RobotGroundTruth()
-    robot_sensor = RobotSensors()
-    particle_filter = ParticleFilter()
+    n_doors_syntax = 2
+    n_bins_syntax = 10
+    n_samples_syntax = 100
+    world_ground_truth_syntax = WorldGroundTruth()
+    world_ground_truth_syntax.random_door_placement(n_doors_syntax, n_bins_syntax)
+    robot_ground_truth_syntax = RobotGroundTruth()
+    robot_sensor_syntax = RobotSensors()
+    particle_filter_syntax = ParticleFilter()
 
     # Syntax check 1, reset probabilities
-    particle_filter.reset_particles(n_samples)
+    particle_filter_syntax.reset_particles(n_samples_syntax)
 
     # Syntax check 2, update move
-    particle_filter.update_particles_move_continuous(robot_ground_truth, 0.1)
+    particle_filter_syntax.update_particles_move_continuous(robot_ground_truth_syntax, 0.1)
 
     # Syntax checks 3 and 4 - the two different sensor readings
-    particle_filter.calculate_weights_door_sensor_reading(world_ground_truth, robot_sensor, True)
-    if np.isclose(np.max(particle_filter.weights), np.min(particle_filter.weights)):
+    particle_filter_syntax.calculate_weights_door_sensor_reading(world_ground_truth_syntax, robot_sensor_syntax, True)
+    if np.isclose(np.max(particle_filter_syntax.weights), np.min(particle_filter_syntax.weights)):
         print(f"Possible error: The weights should not all be the same")
 
-    particle_filter.reset_particles(n_samples)
-    particle_filter.calculate_weights_distance_wall(robot_sensor, 0.1)
-    if np.isclose(np.max(particle_filter.weights), np.min(particle_filter.weights)):
+    particle_filter_syntax.reset_particles(n_samples_syntax)
+    particle_filter_syntax.calculate_weights_distance_wall(robot_sensor_syntax, 0.1)
+    if np.isclose(np.max(particle_filter_syntax.weights), np.min(particle_filter_syntax.weights)):
         print(f"Possible error: The weights should not all be the same")
 
     # Syntax check 5 - importance sampling
-    particle_filter.resample_particles()
-    if not np.isclose(np.max(particle_filter.weights), np.min(particle_filter.weights)):
+    particle_filter_syntax.resample_particles()
+    if not np.isclose(np.max(particle_filter_syntax.weights), np.min(particle_filter_syntax.weights)):
         print(f"Possible error: The weights should be set back to all the same")
-    if np.unique(particle_filter.particles, return_counts=True) == n_samples:
-        print(f"Possible error: There probably should be duplicate particles {np.unique(particle_filter.particles, return_counts=True)} {n_samples}")
+    if np.unique(particle_filter_syntax.particles, return_counts=True) == n_samples_syntax:
+        print(f"Possible error: There probably should be duplicate particles {np.unique(particle_filter_syntax.particles, return_counts=True)} {n_samples_syntax}")
 
     # Syntax checks 6 and 7 - the two full updates
-    particle_filter.one_full_update_door(world_ground_truth, robot_ground_truth, robot_sensor, u=0.1, z=True)
-    particle_filter.one_full_update_distance(robot_ground_truth, robot_sensor, u=0.1, z=0.6)
+    particle_filter_syntax.one_full_update_door(world_ground_truth_syntax, robot_ground_truth_syntax, robot_sensor_syntax, u=0.1, z=True)
+    particle_filter_syntax.one_full_update_distance(robot_ground_truth_syntax, robot_sensor_syntax, u=0.1, z=0.6)
 
 
     # The tests
