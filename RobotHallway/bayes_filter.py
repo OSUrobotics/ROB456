@@ -22,7 +22,7 @@ class BayesFilter:
         # Note that in the GUI version, this will be called with the desired number of bins
         self.reset_probabilities()
 
-    def reset_probabilities(self, n_bins=10):
+    def reset_probabilities(self, n_bins: int = 10):
         """ Initialize discrete probability resolution with uniform distribution
         @param n_bins - the number of bins to divide the unit interval (0,1) up into """
 
@@ -31,6 +31,9 @@ class BayesFilter:
 
     def update_belief_sensor_reading(self, world_ground_truth, robot_sensor, sensor_reading):
         """ Update your probabilities based on the sensor reading being true (door) or false (no door)
+        Slide: Lec 1.2, Bayes rule sensor
+         https://docs.google.com/presentation/d/1p_QI9BFHgEiwoWdMApBvyr4glhdVgX3iRcA7G3ST2jo/edit#slide=id.p2
+
         @param world_ground_truth - has where the doors actually are
         @param robot_sensor - has the robot sensor probabilities
         @param sensor_reading - the actual sensor reading - either True or False
@@ -53,6 +56,11 @@ class BayesFilter:
 
     def update_belief_move_left(self, robot_ground_truth):
         """ Update the probabilities assuming a move left.
+        Slide: Lec 2.1 Bayes rule actions
+        https://docs.google.com/presentation/d/1Vjiy4kqmuYWq811huXZNAU2FGSXNfI3me54oW1ko6hU/edit#slide=id.g16f70ac0d7c_0_9
+
+        Note that transitions p(x|x',u) in the slides is stored in robot_ground_truth.move_probabilities["move_left"], for all the
+        middle bins - you'll have to special-case the transitions at the first and last bins
         @param robot_ground_truth - robot location, has the probabilities for actually moving left if move_left called"""
 
         # bayes assignment
@@ -65,9 +73,27 @@ class BayesFilter:
 
     def update_belief_move_right(self, robot_ground_truth):
         """ Update the probabilities assuming a move right.
+        Sames as above - but this time, transitions are stored in robot_ground_truth.move_probabilities["move_right"]
         @param robot_ground_truth - robot location, has the probabilities for actually moving left if move_left called"""
 
         # bayes assignment
+# YOUR CODE HERE
+
+    def one_full_update(self, world_ground_truth, robot_ground_truth, robot_sensor, u: str, z: bool):
+        """This is the full update loop that takes in one action, followed by a sensor reading
+        Lec 2_2 State estimation, Bayes filter algorithm section
+        Slides: https://docs.google.com/presentation/d/1V_l8GNlGgkvzVMheff_tM7tJlJ4A1y-363QB5hQpHVQ/edit#slide=id.g14a2b1b8e73_0_396
+        Assumes the robot has been moved by the action u, then a sensor reading was taken (see test function below)
+        @
+        @param world_ground_truth - has where the doors actually are
+        @param robot_sensor - has the robot sensor probabilities
+        @param robot_ground_truth - robot location, has the probabilities for actually moving left if move_left called
+        @param u will be one of "move_left" or "move_right" (string)
+        @param z will be one of True or False (door y/n)
+        """
+        # TODO:
+        #  Step 1 predict: update your belief by the action (call one of move_left or move_right)
+        #  Step 2 correct: do the correction step (update belief by the sensor reading)
 # YOUR CODE HERE
 
 
@@ -176,7 +202,6 @@ def test_bayes_filter_sensor_update(b_print=True):
 def test_move_one_direction(b_print=True):
     """ Move all the way to the left (or the right) a LOT, so should pile up probability in the left (or right) bin
     Use the default probabilities
-     @param direction - left or right
      @param b_print - do print statements, yes/no"""
     bayes_filter = BayesFilter()
     robot_ground_truth = RobotGroundTruth()
@@ -215,7 +240,6 @@ def test_move_one_direction(b_print=True):
     return True
 
 
-# YOUR CODE HERE
 
 
 def test_move_update(b_print=True):
@@ -223,34 +247,56 @@ def test_move_update(b_print=True):
     @param b_print - do print statements, yes/no"""
 
     bayes_filter = BayesFilter()
+    world_ground_truth = WorldGroundTruth()
     robot_ground_truth = RobotGroundTruth()
+    robot_sensor = RobotSensors()
 
     # Read in some move sequences and compare your result to the correct answer
     import json
     with open("Data/check_bayes_filter.json", "r") as f:
         answers = json.load(f)
 
+    n_doors = answers["n_doors"]
+    n_bins = answers["n_bins"]
+    step_size = 1.0 / n_bins
+    world_ground_truth.doors = answers["world"]
+
     if b_print:
         print("Testing move update")
+
     # This SHOULD insure that you get the same answer as the solutions, provided you're only calling uniform within
-    #  robot_ground_truth.move*
-    np.random.seed(3)
+    #  robot_ground_truth.move and robot_sensor.query door*
+    seed = 3
+    np.random.seed(seed)
 
     # Try different probability values
-    for answer in answers:
-        n_bins = answer["n_bins"]
-        step_size = 1.0 / n_bins
+    for answer in answers["answers"]:
+        # This SHOULD insure that you get the same answer as the solutions, provided you're only calling uniform within
+        #  robot_ground_truth.move and robot_sensor.query_door*
+        np.random.seed(seed)
+        seed = seed + 1
+
         seq = answer["seq"]
+        zs = answer["Sensors"]
 
         # Reset to uniform
         bayes_filter.reset_probabilities(n_bins)
-        for s in seq:
-            if s is "left":
+        robot_ground_truth.reset_location()
+        for z_check, s in zip(zs, seq):
+            if s == "left":
                 robot_ground_truth.move_left(step_size)
-                bayes_filter.update_belief_move_left(robot_ground_truth)
-            else:
+            elif s == "right":
                 robot_ground_truth.move_right(step_size)
-                bayes_filter.update_belief_move_right(robot_ground_truth)
+            else:
+                raise ValueError(f"Expected left or right, got {s}")
+
+            z = robot_sensor.query_door(robot_ground_truth, world_ground_truth)
+            if b_print:
+                print(f"Loc {robot_ground_truth.robot_loc}, Doors {world_ground_truth.doors}, Sensor {z}")
+            if z is not z_check:
+                print(f"Warning: Sensor reading is different than check {z} versus {z_check}")
+
+            bayes_filter.one_full_update(world_ground_truth, robot_ground_truth, robot_sensor, "move_" + s, z)
 
         check_seed = np.random.uniform()
         if not np.isclose(check_seed, answer["check_seed"]):
@@ -265,32 +311,35 @@ def test_move_update(b_print=True):
 
 
 if __name__ == '__main__':
-    b_print = True
+    b_print_test = True
 
     # Syntax checks
-    n_doors = 2
-    n_bins = 10
-    world_ground_truth = WorldGroundTruth()
-    world_ground_truth.random_door_placement(n_doors, n_bins)
-    robot_sensor = RobotSensors()
-    bayes_filter = BayesFilter()
-    robot_ground_truth = RobotGroundTruth()
+    n_doors_syntax = 2
+    n_bins_syntax = 10
+    world_ground_truth_syntax = WorldGroundTruth()
+    world_ground_truth_syntax.random_door_placement(n_doors_syntax, n_bins_syntax)
+    robot_sensor_syntax = RobotSensors()
+    bayes_filter_syntax = BayesFilter()
+    robot_ground_truth_syntax = RobotGroundTruth()
 
     # Syntax check 1, reset probabilities
-    bayes_filter.reset_probabilities(n_bins)
+    bayes_filter_syntax.reset_probabilities(n_bins_syntax)
 
     # Syntax check 2, update sensor
-    bayes_filter.update_belief_sensor_reading(world_ground_truth, robot_sensor, True)
+    bayes_filter_syntax.update_belief_sensor_reading(world_ground_truth_syntax, robot_sensor_syntax, True)
 
     # Syntax check 3, move
-    bayes_filter.update_belief_move_left(robot_ground_truth)
-    bayes_filter.update_belief_move_right(robot_ground_truth)
+    bayes_filter_syntax.update_belief_move_left(robot_ground_truth_syntax)
+    bayes_filter_syntax.update_belief_move_right(robot_ground_truth_syntax)
+
+    # Syntax check 4, full update
+    bayes_filter_syntax.one_full_update(world_ground_truth_syntax, robot_ground_truth_syntax, robot_sensor_syntax, "move_left", True)
 
     # The tests
-    test_bayes_filter_sensor_update(b_print)
-    test_move_one_direction(b_print)
+    test_bayes_filter_sensor_update(b_print_test)
+    test_move_one_direction(b_print_test)
 
 
-    test_move_update(b_print)
+    test_move_update(b_print_test)
 
     print("Done")

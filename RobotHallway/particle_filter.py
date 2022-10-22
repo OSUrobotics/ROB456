@@ -33,17 +33,23 @@ class ParticleFilter:
 
     def update_particles_move_continuous(self, robot_ground_truth, amount):
         """ Update state estimation based on sensor reading
+        Lec 4.1 particle filters
+        Slide https://docs.google.com/presentation/d/1yddr6QwnUNHfW4GqLkC5Ds6tk8ezO56-WI2-B4ninWU/edit#slide=id.p11
+        The move - lines 3-4 (sampling x_t^m
         @param robot_sensors - for mu/sigma of wall sensor
         @param dist_reading - distance reading returned by sensor"""
 
         # TODO
-        #   For each particle, move it by the given amount PLUS some noise, drawn from the robot_ground_truth noise model
+        #   For each particle, move it by the given amount PLUS some noise, drawn from the robot_ground_truth_syntax noise model
         #       If you don't add noise, you will quickly have all of the particles at the same location..
         #   If it runs into a wall, offset it from the wall by a random amount
 # YOUR CODE HERE
 
     def calculate_weights_door_sensor_reading(self, world_ground_truth, robot_sensor, sensor_reading):
         """ Update your weights based on the sensor reading being true (door) or false (no door)
+        Lec 4.1 particle filters
+        Slide https://docs.google.com/presentation/d/1yddr6QwnUNHfW4GqLkC5Ds6tk8ezO56-WI2-B4ninWU/edit#slide=id.p11
+        The weight calculation - line 5
         @param world_ground_truth - has where the doors actually are
         @param robot_sensor - has the robot sensor probabilities
         @param sensor_reading - the actual sensor reading - either True or False
@@ -68,6 +74,9 @@ class ParticleFilter:
 
     def calculate_weights_distance_wall(self, robot_sensors, dist_reading):
         """ Calculate weights based on distance reading
+        Lec 4.1 particle filters
+        Slide https://docs.google.com/presentation/d/1yddr6QwnUNHfW4GqLkC5Ds6tk8ezO56-WI2-B4ninWU/edit#slide=id.p11
+        The weight calculation - line 5
         @param robot_sensors - for mu/sigma of wall sensor
         @param dist_reading - distance reading returned by sensor"""
 
@@ -87,7 +96,13 @@ class ParticleFilter:
 # YOUR CODE HERE
 
     def resample_particles(self):
-        """ Importance sampling - take the current set of particles and weights and make a new set  """
+        """ Importance sampling - take the current set of particles and weights and make a new set
+        Lec 4.1 particle filters
+        Slide https://docs.google.com/presentation/d/1yddr6QwnUNHfW4GqLkC5Ds6tk8ezO56-WI2-B4ninWU/edit#slide=id.p11
+        The re-sampling (lines 8-10)
+        Also see Lec 4.1 importance sampling
+        https://docs.google.com/presentation/d/1E7mYA-3YoRt7FepwB0rN9vEoqSbHRey-AnlfVBaGRD4/edit#slide=id.p6
+        """
 
         # TODO:
         #   Part 1: make a new numpy array that is a running sum of the weights (normalized)
@@ -100,196 +115,137 @@ class ParticleFilter:
         #   Part 3: Set the weights back to uniform (just to be neat and clean)
 # YOUR CODE HERE
 
+    def one_full_update_door(self, world_ground_truth, robot_ground_truth, robot_sensor, u: float, z: bool):
+        """This is the full update loop that takes in one action, followed by a door sensor reading
+        Lec 4_1 Particle filter
+        Slides: https://docs.google.com/presentation/d/1yddr6QwnUNHfW4GqLkC5Ds6tk8ezO56-WI2-B4ninWU/edit#slide=id.g16c435bbb81_1_0
+        Assumes the robot has been moved by the amount u, then a door sensor reading was taken
+        ONLY door sensor
 
-def convert_histogram(pf, world_ground_truth):
-    """ Convert the particle filter to an (approximate) pmf in order to compare results
-    @param pf - the particle filter
-    @param world_ground_truth - for bin sizes and doors
-    @returns a numpy array with (normalized) probabilities"""
+        @param world_ground_truth - has where the doors actually are
+        @param robot_sensor - has the robot sensor probabilities
+        @param robot_ground_truth - robot location, has the probabilities for actually moving left if move_left called
+        @param u will be the amount moved
+        @param z will be one of True or False (door y/n)
+        """
+        # TODO:
+        #  Step 1 Move the particles (with moise added)
+        #  Step 2 Calculate the weights using the door sensor return value
+        #  Step 3 Resample/importance weight
+# YOUR CODE HERE
 
-    if not np.isclose(np.sum(bf.probabilities), 1.0):
-        raise ValueError(f"Check uniform, expected sum to one, got {np.sum(bf.probabilities)}")
+    def one_full_update_distance(self, robot_ground_truth, robot_sensor, u: float, z: float):
+        """This is the full update loop that takes in one action, followed by a door sensor reading
+        Lec 4_1 Particle filter
+        Slides: https://docs.google.com/presentation/d/1yddr6QwnUNHfW4GqLkC5Ds6tk8ezO56-WI2-B4ninWU/edit#slide=id.g16c435bbb81_1_0
+        Assumes the robot has been moved by the amount u, then a wall distance reading was taken
+        ONLY door sensor
 
-    n_per = 1.0 / len(bf.probabilities)
-    for p in bf.probabilities:
-        if not np.isclose(p, n_per):
-            raise ValueError(f"Check uniform, expected {n_per} in all bins, got {p}")
-    return True
-
-
-def check_door_probs(bayes_filter, world_ground_truth, robot_sensor_probs, sensor_readings, b_print=True):
-    """ If only doing door updates, there are a couple things that have to hold true
-     1) All in front of door (and not in front of door) probabilities should be the same
-     2) those probabilities are the same as rolling dice n times
-     @param bayes_filter - the bayes filter after the sensor readings
-     @param world_ground_truth - the world ground truth/door readings
-     @param robot_sensor_probs - the robot sensor probabilities
-     @param sensor_readings - list of True/False sensor reading return values
-     @param b_print - do print statements, yes/no"""
-
-    if b_print:
-        print(f"Checking sequence {sensor_readings}")
-
-    n_doors = len(world_ground_truth.doors)
-    n_bins = len(bayes_filter.probabilities)
-    div_bins = 1.0 / n_bins
-
-    # First, calculate what the probability of being in front of a door is, given the sensor values (assuming in front
-    #   of door)
-    prob_in_front_of_door = div_bins
-    prob_not_in_front_of_door = div_bins
-    for reading in sensor_readings:
-        if reading:
-            prob_in_front_of_door = prob_in_front_of_door * robot_sensor_probs[0]
-            prob_not_in_front_of_door = prob_not_in_front_of_door * robot_sensor_probs[1]
-        else:
-            prob_in_front_of_door = prob_in_front_of_door * (1.0 - robot_sensor_probs[0])
-            prob_not_in_front_of_door = prob_not_in_front_of_door * (1.0 - robot_sensor_probs[1])
-
-    # Normalize by number of doors
-    sum_probs = n_doors * prob_in_front_of_door + (n_bins - n_doors) * prob_not_in_front_of_door
-    prob_in_front_of_door /= sum_probs
-    prob_not_in_front_of_door /= sum_probs
-    for i_bin, prob in enumerate(bayes_filter.probabilities):
-        loc = (i_bin+0.5) * div_bins
-        if world_ground_truth.is_location_in_front_of_door(loc):
-            if not np.isclose(prob, prob_in_front_of_door):
-                raise ValueError(f"Check door probabilities: new probability should be {prob_in_front_of_door}, was{prob}")
-        else:
-            if not np.isclose(prob, prob_not_in_front_of_door):
-                raise ValueError(f"Check door probabilities: new probability should be {prob_not_in_front_of_door}, was {prob}")
-
-    if b_print:
-        print("Passed\n")
-    return True
-
-
-def test_bayes_filter_sensor_update(b_print=True):
-    """ Do a sensor update with known values and check that the answer is correct
-    How this works: If there is no motion (just sensor readings) than the values for all of the locations in front
-     of the doors should be the same (also true for all of the locations NOT in front of the doors)
-     Those probabilities are just the product of the Bayes' update rule
-    @param b_print - do print statements, yes/no"""
-    world_ground_truth = WorldGroundTruth()
-    robot_sensor = RobotSensors()
-    bayes_filter = BayesFilter()
-
-    n_doors = 2
-    n_bins = 20
-    probs = (0.6, 0.1)
-
-    if b_print:
-        print("Checking Bayes filter sensor update")
-    np.random.seed(2)
-
-    # Initialize with values that are NOT the default ones
-    world_ground_truth.random_door_placement(n_doors, n_bins)
-    robot_sensor.set_door_sensor_probabilites(probs[0], probs[1])
-
-    # The sequences to try. You can add more if you'd like. The first two check the True and False cases
-    seqs = [[True], [False], [True, True, False]]
-    for seq in seqs:
-        # Double check that you're starting off with uniform probabilities
-        bayes_filter.reset_probabilities(n_bins)
-        check_uniform(bayes_filter)
-
-        # Call the update function with the given sensor readings
-        for s in seq:
-            bayes_filter.update_belief_sensor_reading(world_ground_truth, robot_sensor, s)
-
-        # The actual check function
-        check_door_probs(bayes_filter, world_ground_truth, probs, seq, b_print)
-
-    if b_print:
-        print("Passed all sequences\n")
-    return True
-
-
-def test_move_one_direction(b_print=True):
-    """ Move all the way to the left (or the right) a LOT, so should pile up probability in the left (or right) bin
-    Use the default probabilities
-     @param direction - left or right
-     @param b_print - do print statements, yes/no"""
-    bayes_filter = BayesFilter()
-    robot_ground_truth = RobotGroundTruth()
-
-    n_bins = 15
-    step_size = 1.0 / n_bins
-    n_moves = n_bins * 10
-
-    if b_print:
-        print("Testing move in one direction")
-    np.random.seed(20)
-
-    # Try the left, then the right move
-    # Python note: you can treat class methods/functions just like other variables - this creates a tuple with the
-    #   two methods (move left, move right) so we can call them in the for loop (dir_move)
-    dirs_move = (robot_ground_truth.move_left, robot_ground_truth.move_right)
-    dirs_update = (bayes_filter.update_belief_move_left, bayes_filter.update_belief_move_right)
-    for dir_move, dir_update, bin_id in zip(dirs_move, dirs_update, (0, n_bins-1)):
-        if b_print:
-            print(f"Test move {dir_move.__name__}")
-        # Reset both the bayes filter probabilities and the robot ground truth location
-        bayes_filter.reset_probabilities(n_bins)
-        robot_ground_truth.reset_location()
-
-        for _ in range(0, n_moves):
-            # Move the robot
-            dir_move(step_size)
-            # Update the bayes filter - needs the probabilities in robot_ground_truth (NOT the robot's actual location)
-            dir_update(robot_ground_truth)
-
-        if not bayes_filter.probabilities[bin_id] > 0.9:
-            raise ValueError(f"Expected all of the probability to be in the {bin_id} bin, was {bayes_filter.probabilities[bin_id]}")
-        if b_print:
-            print("Passed")
-
-    return True
-
-
+        @param robot_sensor - has the robot sensor probabilities
+        @param robot_ground_truth - robot location, has the probabilities for actually moving left if move_left called
+        @param u will be the amount moved
+        @param z will be the distance from the sensor
+        """
+        # TODO:
+        #  Step 1 Move the particles (with moise added)
+        #  Step 2 Calculate the weights using the distance sensor return value
+        #  Step 3 Resample/importance weight
 # YOUR CODE HERE
 
 
-def test_move_update(b_print=True):
+def convert_histogram(pf, n_bins):
+    """ Convert the particle filter to an (approximate) pmf in order to compare results
+    @param pf - the particle filter
+    @param n_bins - number of bins
+    @returns a numpy array with (normalized) probabilities"""
+
+    bins = np.zeros(n_bins)
+    for p in pf.particles:
+        bin_index = int(np.floor(p * n_bins))
+        try:
+            bins[bin_index] += 1.0
+        except IndexError:
+            if p < 0.0 or p > 1.0:
+                raise ValueError(f"Convert histogram: particle location not in zero to 1 {p}")
+            bins[-1] += 1.0
+
+    bins /= np.sum(bins)
+    return bins
+
+
+
+
+def test_particle_filter(b_print=True):
     """ Test the move update. This test is done by comparing your probability values to some pre-calculated/saved values
     @param b_print - do print statements, yes/no"""
 
-    bayes_filter = BayesFilter()
-    robot_ground_truth = RobotGroundTruth()
-
     # Read in some move sequences and compare your result to the correct answer
     import json
-    with open("Data/check_bayes_filter.json", "r") as f:
+    with open("Data/check_particle_filter.json", "r") as f:
         answers = json.load(f)
 
     if b_print:
-        print("Testing move update")
+        print("Testing particle filter")
+
+    particle_filter = ParticleFilter()
+    world_ground_truth = WorldGroundTruth()
+    robot_ground_truth = RobotGroundTruth()
+    robot_sensor = RobotSensors()
+
+    # Generate some move sequences and compare to the correct answer
+    n_doors = answers["n_doors"]
+    n_bins = answers["n_bins"]
+
+    seed = 3
+    np.random.seed(seed)
+    world_ground_truth.random_door_placement(n_doors, n_bins)
+
+    # Set mu/sigmas
+    robot_ground_truth.set_move_continuos_probabilities(answers["move_error"]["sigma"])
+    robot_sensor.set_distance_wall_sensor_probabilities(answers["sensor_noise"]["sigma"])
+
     # This SHOULD insure that you get the same answer as the solutions, provided you're only calling uniform within
-    #  robot_ground_truth.move*
+    #  robot_ground_truth_syntax.move*
     np.random.seed(3)
 
-    # Try different probability values
-    for answer in answers:
-        n_bins = answer["n_bins"]
-        step_size = 1.0 / n_bins
-        seq = answer["seq"]
-
+    # Try different sequences
+    for seq in answers["results"]:
         # Reset to uniform
-        bayes_filter.reset_probabilities(n_bins)
-        for s in seq:
-            if s is "left":
-                robot_ground_truth.move_left(step_size)
-                bayes_filter.update_belief_move_left(robot_ground_truth)
+        particle_filter.reset_particles()
+        robot_ground_truth.reset_location()
+
+        for i, s in enumerate(seq["seq"]):
+            if s == "Door":
+                saw_door = robot_sensor.query_door(robot_ground_truth, world_ground_truth)
+                particle_filter.calculate_weights_door_sensor_reading(world_ground_truth, robot_sensor, saw_door)
+                particle_filter.resample_particles()
+                if saw_door != seq["sensor_reading"][i]:
+                    print("Warning: expected {seq['sensor_reading'][i]} got {saw_door}")
+            elif s == "Dist":
+                dist = robot_sensor.query_distance_to_wall(robot_ground_truth)
+                particle_filter.calculate_weights_distance_wall(robot_sensor, dist)
+                particle_filter.resample_particles()
+                if not np.isclose(dist, seq["sensor_reading"][i]):
+                    print("Warning: expected {seq['sensor_reading'][i]} got {dist}")
+            elif s == "Move":
+                actual_move = robot_ground_truth.move_continuous(seq["move_amount"][i])
+                particle_filter.update_particles_move_continuous(robot_ground_truth, seq["move_amount"][i])
+            elif s == "Move_dist":
+                actual_move = robot_ground_truth.move_continuous(seq["move_amount"][i])
+                dist = robot_sensor.query_distance_to_wall(robot_ground_truth)
+                particle_filter.one_full_update_distance(robot_ground_truth, robot_sensor, u=seq["move_amount"][i], z=dist)
+            elif s == "Move_door":
+                actual_move = robot_ground_truth.move_continuous(seq["move_amount"][i])
+                saw_door = robot_sensor.query_door(robot_ground_truth, world_ground_truth)
+                particle_filter.one_full_update_door(world_ground_truth, robot_ground_truth, robot_sensor, u=seq["move_amount"][i], z=saw_door)
             else:
-                robot_ground_truth.move_right(step_size)
-                bayes_filter.update_belief_move_right(robot_ground_truth)
+                raise ValueError(f"Should be one of Move, Sensor, or Both, got {s}")
 
-        check_seed = np.random.uniform()
-        if not np.isclose(check_seed, answer["check_seed"]):
-            print("Warning: random number generator is off, may report incorrect result")
-
-        if not np.any(np.isclose(answer["result"], bayes_filter.probabilities, atol=0.01)):
-            ValueError(f"Probabilities are different \n{answer['result']} \n{bayes_filter.probabilities}")
+        h = convert_histogram(particle_filter, n_bins)
+        h_expected = np.array(seq["histogram"])
+        res = np.isclose(h, h_expected)
+        if np.any(np.isclose(h, h_expected, 0.05) == False):
+            raise ValueError(f"Historgrams don't match {h}, {seq['histogram']} {res}")
 
     if b_print:
         print("Passed")
@@ -302,27 +258,42 @@ if __name__ == '__main__':
     # Syntax checks
     n_doors = 2
     n_bins = 10
+    n_samples = 100
     world_ground_truth = WorldGroundTruth()
     world_ground_truth.random_door_placement(n_doors, n_bins)
-    robot_sensor = RobotSensors()
-    bayes_filter = BayesFilter()
     robot_ground_truth = RobotGroundTruth()
+    robot_sensor = RobotSensors()
+    particle_filter = ParticleFilter()
 
     # Syntax check 1, reset probabilities
-    bayes_filter.reset_probabilities(n_bins)
+    particle_filter.reset_particles(n_samples)
 
-    # Syntax check 2, update sensor
-    bayes_filter.update_belief_sensor_reading(world_ground_truth, robot_sensor, True)
+    # Syntax check 2, update move
+    particle_filter.update_particles_move_continuous(robot_ground_truth, 0.1)
 
-    # Syntax check 3, move
-    bayes_filter.update_belief_move_left(robot_ground_truth)
-    bayes_filter.update_belief_move_right(robot_ground_truth)
+    # Syntax checks 3 and 4 - the two different sensor readings
+    particle_filter.calculate_weights_door_sensor_reading(world_ground_truth, robot_sensor, True)
+    if np.isclose(np.max(particle_filter.weights), np.min(particle_filter.weights)):
+        print(f"Possible error: The weights should not all be the same")
+
+    particle_filter.reset_particles(n_samples)
+    particle_filter.calculate_weights_distance_wall(robot_sensor, 0.1)
+    if np.isclose(np.max(particle_filter.weights), np.min(particle_filter.weights)):
+        print(f"Possible error: The weights should not all be the same")
+
+    # Syntax check 5 - importance sampling
+    particle_filter.resample_particles()
+    if not np.isclose(np.max(particle_filter.weights), np.min(particle_filter.weights)):
+        print(f"Possible error: The weights should be set back to all the same")
+    if np.unique(particle_filter.particles, return_counts=True) == n_samples:
+        print(f"Possible error: There probably should be duplicate particles {np.unique(particle_filter.particles, return_counts=True)} {n_samples}")
+
+    # Syntax checks 6 and 7 - the two full updates
+    particle_filter.one_full_update_door(world_ground_truth, robot_ground_truth, robot_sensor, u=0.1, z=True)
+    particle_filter.one_full_update_distance(robot_ground_truth, robot_sensor, u=0.1, z=0.6)
+
 
     # The tests
-    test_bayes_filter_sensor_update(b_print)
-    test_move_one_direction(b_print)
-
-
-    test_move_update(b_print)
+    test_particle_filter(b_print)
 
     print("Done")

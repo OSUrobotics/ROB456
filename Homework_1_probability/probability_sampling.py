@@ -288,15 +288,15 @@ class SampleProbabilityMassFunction:
         #  The running sum
 # YOUR CODE HERE
         # Where the center of each bin is (see sample_bin_variable above)
-        self.bin_centers = np.zeros(n_bins)
+        self.bin_centers = np.zeros(n_bins_syntax)
         
         # Create the pmf by evaluating in_pdf at the center of each bin
         #   Don't forget to normalize - the sum of self.bin_heights should be 1
-        self.bin_heights = np.zeros(n_bins)
+        self.bin_heights = np.zeros(n_bins_syntax)
         # Running sum of probabilities - bin_sum[i] = sum(bin_heights[0:i])
-        #  Note: It's a bit easier to generate_sample if you make this array n_bins+1, with the first value being 0
+        #  Note: It's a bit easier to generate_sample if you make this array n_bins_syntax+1, with the first value being 0
         #   and the last value being 1         
-        self.bin_sum = np.zeros(n_bins+1)
+        self.bin_sum = np.zeros(n_bins_syntax+1)
 
     def generate_sample(self):
         """ Draw one sample from the pmf
