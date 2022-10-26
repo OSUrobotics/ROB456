@@ -8,6 +8,8 @@
   ],
   "answers": [
     {
+      "n_doors": 3,
+      "n_bins": 20,
       "Probs_left": [
         0.6,
         0.3
@@ -51,6 +53,8 @@
       "check_seed": 0.12558531046383625
     },
     {
+      "n_doors": 3,
+      "n_bins": 20,
       "Probs_left": [
         0.6,
         0.3
@@ -94,6 +98,8 @@
       "check_seed": 0.9762744547762418
     },
     {
+      "n_doors": 3,
+      "n_bins": 20,
       "Probs_left": [
         0.6,
         0.3
@@ -139,6 +145,8 @@
       "check_seed": 0.29680050157622195
     },
     {
+      "n_doors": 3,
+      "n_bins": 20,
       "Probs_left": [
         0.7,
         0.1
@@ -182,6 +190,8 @@
       "check_seed": 0.5298173621928216
     },
     {
+      "n_doors": 3,
+      "n_bins": 20,
       "Probs_left": [
         0.7,
         0.1
@@ -225,6 +235,8 @@
       "check_seed": 0.5011204636599379
     },
     {
+      "n_doors": 3,
+      "n_bins": 20,
       "Probs_left": [
         0.7,
         0.1

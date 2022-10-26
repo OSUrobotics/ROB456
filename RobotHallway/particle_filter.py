@@ -44,6 +44,7 @@ class ParticleFilter:
         #       If you don't add noise, you will quickly have all of the particles at the same location..
         #   If it runs into a wall, offset it from the wall by a random amount
 # YOUR CODE HERE
+        # print(f"CL {count_off_left_wall} CR {count_off_right_wall}")
 
     def calculate_weights_door_sensor_reading(self, world_ground_truth, robot_sensor, sensor_reading):
         """ Update your weights based on the sensor reading being true (door) or false (no door)
@@ -152,6 +153,32 @@ class ParticleFilter:
         #  Step 3 Resample/importance weight
 # YOUR CODE HERE
 
+    def plot_particles_with_weights(self, axs, world_ground_truth, robot_ground_truth):
+        """Plot the particles (scaled by weights) and the doors and where the robot actually is
+        @param axs - window to draw in
+        @param world_ground_truth - for the doors
+        @param robot_ground_truth - for the robot's location"""
+
+        # Plot "walls"
+        height = 0.75
+        axs.plot([0.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, height, height, 0.0], '-k')
+        # Plot "doors"
+        door_width = 0.95 * world_ground_truth.door_width / 2.0
+        for d in world_ground_truth.doors:
+            axs.plot([d - door_width, d - door_width, d + door_width, d + door_width], [0.0, 0.5 * height, 0.5 * height, 0.0], '-r')
+
+        min_ws = np.min(self.weights)
+        max_ws = np.max(self.weights)
+        if np.isclose(max_ws, min_ws):
+            max_ws = min_ws + 0.01
+
+        for w, p in zip(self.weights, self.particles):
+            h = 0.2 * (w - min_ws) / (max_ws - min_ws) + 0.05
+            axs.plot([p, p], [0.01, 0.01 + h], '-g')
+
+        # Robot
+        axs. plot(robot_ground_truth.robot_loc, 0.05, 'xb', markersize=10)
+
 
 def convert_histogram(pf, n_bins):
     """ Convert the particle filter to an (approximate) pmf in order to compare results
@@ -175,8 +202,8 @@ def convert_histogram(pf, n_bins):
 
 
 
-def test_particle_filter(b_print=True):
-    """ Test the move update. This test is done by comparing your probability values to some pre-calculated/saved values
+def test_particle_filter_syntax(b_print=True):
+    """ Test the sequence of calls for syntax and basic errors
     @param b_print - do print statements, yes/no"""
 
     # Read in some move sequences and compare your result to the correct answer
@@ -185,7 +212,7 @@ def test_particle_filter(b_print=True):
         answers = json.load(f)
 
     if b_print:
-        print("Testing particle filter")
+        print("Testing particle filter (syntax)")
 
     particle_filter = ParticleFilter()
     world_ground_truth = WorldGroundTruth()
@@ -205,7 +232,8 @@ def test_particle_filter(b_print=True):
     robot_sensor.set_distance_wall_sensor_probabilities(answers["sensor_noise"]["sigma"])
 
     # This SHOULD insure that you get the same answer as the solutions, provided you're only calling uniform within
-    #  robot_ground_truth_syntax.move*
+    #  the door sensor reading, one call to random.normal() for the move, and one call to uniform for each particle
+    #  in the importance sampling*
     np.random.seed(3)
 
     # Try different sequences
@@ -243,12 +271,15 @@ def test_particle_filter(b_print=True):
 
         h = convert_histogram(particle_filter, n_bins)
         h_expected = np.array(seq["histogram"])
-        res = np.isclose(h, h_expected)
-        if np.any(np.isclose(h, h_expected, 0.05) == False):
-            raise ValueError(f"Historgrams don't match {h}, {seq['histogram']} {res}")
+        res = np.isclose(h, h_expected, 0.1)
+        if b_print:
+            print(f"Should be approximately equal, seq: {seq['seq']}")
+            print(f"{res}")
+            print(f"Your h: {h}")
+            print(f"Approximate h: {h_expected}\n")
 
     if b_print:
-        print("Passed")
+        print("Passed syntax check")
     return True
 
 
@@ -293,7 +324,7 @@ if __name__ == '__main__':
     particle_filter_syntax.one_full_update_distance(robot_ground_truth_syntax, robot_sensor_syntax, u=0.1, z=0.6)
 
 
-    # The tests
-    test_particle_filter(b_print)
+    # The syntax tests/approximate histogram tests
+    test_particle_filter_syntax(b_print)
 
     print("Done")
