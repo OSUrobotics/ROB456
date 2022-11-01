@@ -484,7 +484,7 @@ class StateEstimationGUI(QMainWindow):
         # Do the sensor reading followed by the update
         dist_wall_z = self.robot_scene.robot_sensors.query_distance_to_wall(self.robot_scene.robot_ground_truth)
         if self.which_filter is "Kalman":
-            self.robot_scene.kalman_filter.update_belief_distance_sensor_reading(self.robot_scene.robot_sensors, dist_wall_z)
+            self.robot_scene.kalman_filter.update_belief_distance_sensor(self.robot_scene.robot_sensors, dist_wall_z)
         elif self.which_filter is "Particle":
             self.robot_scene.particle_filter.calculate_weights_distance_wall(self.robot_scene.robot_sensors, dist_wall_z)
 
@@ -557,7 +557,7 @@ class StateEstimationGUI(QMainWindow):
         dist_wall_actual = self.robot_scene.robot_ground_truth.robot_loc
         self.robot_scene.last_wall_sensor_noise = dist_wall_actual - dist_wall_z
         self.robot_scene.loc_text = "Asked loc {0:0.2f}, got {1:0.2f}".format(dist_wall_actual, dist_wall_z)
-        self.robot_scene.kalman_filter.update_belief_distance_sensor_reading(self.robot_scene.world_ground_truth, dist_wall_z)
+        self.robot_scene.kalman_filter.update_belief_distance_sensor(self.robot_scene.world_ground_truth, dist_wall_z)
 
         self.repaint()
 

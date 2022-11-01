@@ -27,7 +27,7 @@ class KalmanFilter:
         self.sigma = 0.4
 
     # Sensor reading, distance to wall
-    def update_belief_distance_sensor_reading(self, robot_sensors, dist_reading):
+    def update_belief_distance_sensor(self, robot_sensors, dist_reading):
         """ Update state estimation based on sensor reading
         Lec 3.1 Kalman filters
         Slides: https://docs.google.com/presentation/d/1a9FGeAQKxtAlIeDMykePcmJYF1wBNOwSUg-ts4L0N_U/edit#slide=id.p23
@@ -106,7 +106,7 @@ def test_kalman_update(b_print=True):
         for i, s in enumerate(seq["seq"]):
             if s == "Sensor":
                 dist = robot_sensor.query_distance_to_wall(robot_ground_truth)
-                kalman_filter.update_belief_distance_sensor_reading(robot_sensor, dist)
+                kalman_filter.update_belief_distance_sensor(robot_sensor, dist)
                 if not np.isclose(dist, seq["sensor_reading"][i]):
                     print(f"Warning, sensor reading should be {seq['sensor_reading'][i]}, got {dist}")
             elif s == "Move":
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     robot_ground_truth_syntax.set_move_continuos_probabilities(move_error_syntax["sigma"])
     robot_sensor_syntax.set_distance_wall_sensor_probabilities(sensor_noise_syntax["sigma"])
 
-    kalman_filter_syntax.update_belief_distance_sensor_reading(robot_sensor_syntax, 0.1)
+    kalman_filter_syntax.update_belief_distance_sensor(robot_sensor_syntax, 0.1)
     kalman_filter_syntax.update_continuous_move(robot_ground_truth_syntax, 0.0)
 
     # Do both at the same time

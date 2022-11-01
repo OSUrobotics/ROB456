@@ -44,6 +44,7 @@ class ParticleFilter:
         #       If you don't add noise, you will quickly have all of the particles at the same location..
         #   If it runs into a wall, offset it from the wall by a random amount
 # YOUR CODE HERE
+        # print(f"CL {count_off_left_wall} CR {count_off_right_wall}")
 
     def calculate_weights_door_sensor_reading(self, world_ground_truth, robot_sensor, sensor_reading):
         """ Update your weights based on the sensor reading being true (door) or false (no door)
@@ -175,8 +176,8 @@ def convert_histogram(pf, n_bins):
 
 
 
-def test_particle_filter(b_print=True):
-    """ Test the move update. This test is done by comparing your probability values to some pre-calculated/saved values
+def test_particle_filter_syntax(b_print=True):
+    """ Test the sequence of calls for syntax and basic errors
     @param b_print - do print statements, yes/no"""
 
     # Read in some move sequences and compare your result to the correct answer
@@ -185,7 +186,7 @@ def test_particle_filter(b_print=True):
         answers = json.load(f)
 
     if b_print:
-        print("Testing particle filter")
+        print("Testing particle filter (syntax)")
 
     particle_filter = ParticleFilter()
     world_ground_truth = WorldGroundTruth()
@@ -205,7 +206,8 @@ def test_particle_filter(b_print=True):
     robot_sensor.set_distance_wall_sensor_probabilities(answers["sensor_noise"]["sigma"])
 
     # This SHOULD insure that you get the same answer as the solutions, provided you're only calling uniform within
-    #  robot_ground_truth_syntax.move*
+    #  the door sensor reading, one call to random.normal() for the move, and one call to uniform for each particle
+    #  in the importance sampling*
     np.random.seed(3)
 
     # Try different sequences
@@ -243,12 +245,15 @@ def test_particle_filter(b_print=True):
 
         h = convert_histogram(particle_filter, n_bins)
         h_expected = np.array(seq["histogram"])
-        res = np.isclose(h, h_expected)
-        if np.any(np.isclose(h, h_expected, 0.05) == False):
-            raise ValueError(f"Historgrams don't match {h}, {seq['histogram']} {res}")
+        res = np.isclose(h, h_expected, 0.1)
+        if b_print:
+            print(f"Should be approximately equal, seq: {seq['seq']}")
+            print(f"{res}")
+            print(f"Your h: {h}")
+            print(f"Approximate h: {h_expected}\n")
 
     if b_print:
-        print("Passed")
+        print("Passed syntax check")
     return True
 
 
@@ -294,6 +299,6 @@ if __name__ == '__main__':
 
 
     # The tests
-    test_particle_filter(b_print)
+    test_particle_filter_syntax(b_print)
 
     print("Done")
