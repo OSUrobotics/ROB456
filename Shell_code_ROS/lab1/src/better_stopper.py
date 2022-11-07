@@ -29,14 +29,6 @@ def callback(scan):
 	# robot (which it actually isn't) and that it's centered and pointing forwards.
 	# We can work around these assumptions, but it's cleaner if we don't
 
-	# The previous two lines of code are pretty gnarly, since it uses numpy.  It is,
-	# however, really fast.  If you're confused, then take a look at this (slower)
-	# version of the code, which does the same thing.
-	#shortest = 1000000
-	#for r, theta in zip(scan.ranges, np.linspace(scan.angle_min, scan.angle_max, len(scan.ranges))):
-	#	if np.abs(r * np.sin(theta)) <= 0.19:
-	#		shortest2 = min(r, shortest2)
-
 	# Pulling out some useful values from scan
 	angle_min = scan.angle_min
 	angle_max = scan.angle_max
