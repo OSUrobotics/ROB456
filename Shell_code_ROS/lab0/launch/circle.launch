@@ -1,0 +1,16 @@
+<!--
+	Example launch file, publish a circling point, and show it in rviz.
+
+	Bill Smart, smartw@oregonstate.edu
+-->
+
+
+<launch>
+
+	<!-- Start the circle node -->
+	<node pkg="lab0" name="circler" type="circler.py" />
+
+	<!-- Start rviz -->
+	<node pkg="rviz" name="rviz" type="rviz" args="-d $(find lab0)/config/circler.rviz" />
+
+</launch>

@@ -1,0 +1,16 @@
+<!--
+	Example launch file, to make sure everything works as expected.
+
+	Bill Smart, smartw@oregonstate.edu
+-->
+
+
+<launch>
+
+	<!-- Start a publisher node -->
+	<node pkg="lab0" name="publisher" type="publisher.py" />
+
+	<!-- Start a subscriber node -->
+	<node pkg="lab0" name="subscriber" type="subscriber.py" />
+
+</launch>
