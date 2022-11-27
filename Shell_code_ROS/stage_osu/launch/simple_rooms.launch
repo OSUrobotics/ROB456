@@ -1,0 +1,5 @@
+<launch>
+
+	<node pkg="stage_ros" name="stage" type="stageros" args="$(find stage_osu)/config/simple.world" />
+
+</launch>
