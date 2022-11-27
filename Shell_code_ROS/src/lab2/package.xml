@@ -57,6 +57,8 @@
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>tf</depend>
+  <depend>actionlib</depend>
+  <depend>message_filters</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

@@ -1,0 +1,5 @@
+geometry_msgs/PointStamped goal
+---
+std_msgs/Bool success
+---
+std_msgs/Float32 distance

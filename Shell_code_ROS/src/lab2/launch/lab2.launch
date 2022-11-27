@@ -1,0 +1,9 @@
+<launch>
+
+	<!-- Spin up a simulator.  -->
+	<include file="$(find stage_osu)/launch/empty.launch" />
+
+	<!-- Start a custom rviz.  -->
+	<node pkg="rviz" name="rviz" type="rviz" args="-d $(find lab2)/config/driver.rviz" />
+
+</launch>
