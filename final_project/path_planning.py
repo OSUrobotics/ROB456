@@ -10,7 +10,7 @@
 #
 # Slides https://docs.google.com/presentation/d/1XBPw2B2Bac-LcXH5kYN4hQLLLl_AMIgoowlrmPpTinA/edit?usp=sharing
 
-# The ever-present numpy and matplot lib
+# The ever-present numpy
 import numpy as np
 
 # Our priority queue
@@ -53,7 +53,7 @@ def plot_with_path(im, im_threshhold, robot_loc=None, goal_loc=None, path=None):
             axs[i].plot(goal_loc[0], goal_loc[1], '*g', markersize=10)
         if path is not None:
             for p, q in zip(path[0:-1], path[1:]):
-                axs[i].plot([p[0], q[0]], [p[1], q[1]], '.y', markersize=2)
+                axs[i].plot([p[0], q[0]], [p[1], q[1]], '-y', markersize=2)
                 axs[i].plot(p[0], p[1], '.y', markersize=2)
     # Double checking lower left corner
     axs[1].plot(10, 5, 'xy', markersize=5)
@@ -104,7 +104,7 @@ def convert_image(im):
     im_avg = im_avg / np.max(im_avg)
     # threshold
     #   in our example image, black is walls
-    im_ret[im_avg < 0.5] = 255
+    im_ret[im_avg < 0.7] = 255
     im_ret[im_avg > 0.9] = 0
     return im_ret
 
