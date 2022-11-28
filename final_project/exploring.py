@@ -27,7 +27,7 @@ import imageio
 
 
 # -------------- Showing start and end and path ---------------
-def plot_with_explore_points(im_threshhold, robot_loc=None, explore_points=None, best_pt=None):
+def plot_with_explore_points(im_threshhold, zoom=1.0, robot_loc=None, explore_points=None, best_pt=None):
     """Show the map plus, optionally, the robot location and points marked as ones to explore/use as end-points
     @param im - the image of the SLAM map
     @param im_threshhold - the image of the SLAM map
@@ -52,20 +52,24 @@ def plot_with_explore_points(im_threshhold, robot_loc=None, explore_points=None,
     """
 
     # Show original and thresholded image
-    for i in range(0, 2):
-        if robot_loc is not None:
-            axs[i].plot(robot_loc[0], robot_loc[1], '+r', markersize=10)
-        if best_pt is not None:
-            axs[i].plot(best_pt[0], best_pt[1], 'xy', markersize=10)
     if explore_points is not None:
         for p in explore_points:
             axs[1].plot(p[0], p[1], '.b', markersize=2)
 
-    # Double checking lower left corner
-    axs[1].plot(10, 5, 'xy', markersize=5)
-    # Depending on if your mac, windows, linux, and if interactive is true, you may need to call this to get the plt
-    # windows to show
-    plt.show()
+    for i in range(0, 2):
+        if robot_loc is not None:
+            axs[i].plot(robot_loc[0], robot_loc[1], '+r', markersize=10)
+        if best_pt is not None:
+            axs[i].plot(best_pt[0], best_pt[1], '*y', markersize=10)
+        axs[i].axis('equal')
+
+    for i in range(0, 2):
+        # Implements a zoom - set zoom to 1.0 if no zoom
+        width = im_threshhold.shape[1]
+        height = im_threshhold.shape[0]
+
+        axs[i].set_xlim(width / 2 - zoom * width / 2, width / 2 + zoom * width / 2)
+        axs[i].set_ylim(height / 2 - zoom * height / 2, height / 2 + zoom * height / 2)
 
 
 # -------------- For converting to the map and back ---------------
@@ -138,18 +142,24 @@ def find_waypoints(im, path):
 # YOUR CODE HERE
 
 if __name__ == '__main__':
-    im = imageio.imread("Data/SLAM_map.png")
-    im_thresh = path_planning.convert_image(im)
+    # Doing this here because it is a different yaml than JN
+    import yaml_1 as yaml
 
-    robot_start_loc = (200, 150)
+    im, im_thresh = path_planning.open_image("map.pgm")
+
+    robot_start_loc = (1940, 1953)
 
     all_unseen = find_all_possible_goals(im_thresh)
     best_unseen = find_best_point(im_thresh, all_unseen, robot_loc=robot_start_loc)
 
-    plot_with_explore_points(im_thresh, robot_start_loc, all_unseen, best_unseen)
+    plot_with_explore_points(im_thresh, zoom=0.1, robot_loc=robot_start_loc, explore_points=all_unseen, best_pt=best_unseen)
 
     path = path_planning.dijkstra(im_thresh, robot_start_loc, best_unseen)
     waypoints = find_waypoints(im_thresh, path)
-    path_planning.plot_with_path(im, im_thresh, robot_start_loc, best_unseen, path)
+    path_planning.plot_with_path(im, im_thresh, zoom=0.1, robot_loc=robot_start_loc, goal_loc=best_unseen, path=waypoints)
+
+    # Depending on if your mac, windows, linux, and if interactive is true, you may need to call this to get the plt
+    # windows to show
+    # plt.show()
 
     print("Done")
