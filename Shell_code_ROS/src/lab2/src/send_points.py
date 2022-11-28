@@ -131,4 +131,4 @@ if __name__ == '__main__':
 	sender.send_points()
 
 	# When all the points have been visited, we just exit
-	rospy.log_info("All done!")
+	rospy.loginfo("All done!")
