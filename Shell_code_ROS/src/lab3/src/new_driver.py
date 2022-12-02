@@ -100,19 +100,24 @@ class Driver:
 				feedback.distance.data = distance
 				self._action_server.publish_feedback(feedback)
 
-				# TODO (maybe) - if you want to have a "smarter" reached goal criteria, then change
-				#  distance > self._threshold to be something that returns True when the target is reached
-				if distance > self._threshold:
-					command = self.get_twist((target.point.x, target.point.y), lidar)
-				else:
+				# This is where it moves to the next goal position. f you want to have a "smarter" reached goal criteria, then change
+				#  close_enough_to_waypoint to return True for that case
+				if self.close_enough_to_waypoint(distance, (target.point.x, target.point.y), lidar):
 					self._target_point = None
 					command = Driver.zero_twist()
+				else:
+					command = self.get_twist((target.point.x, target.point.y), lidar)
 			except:
 				return
 		else:
 			command = Driver.zero_twist()
 
 		self._cmd_pub.publish(command)
+
+	def close_enough_to_waypoint(self, distance, target, lidar):
+		""" This is a dummy class method that will be overwritten by the one in student_driver - change that
+		 one, NOT this one"""
+		raise NotImplemented('close_enough_to_waypoint() not implemented')
 
 	def get_twist(self, target, lidar):
 		""" This is a dummy class method that will be overwritten by the one in student_driver - change that

@@ -202,12 +202,16 @@ def dijkstra(im, robot_loc, goal_loc):
     # Now check that we actually found the goal node
     try_2 = goal_loc
     if not goal_loc in visited:
+        # TODO: Deal with not being able to get to the goal loc
+        # BEGIN SOLULTION
         best = 1e30
         for v in visited:
             if v[0] < best:
                 best = v[0]
                 try_2 = v[1]
         return dijkstra(im, robot_loc, try_2)
+        raise ValueError(f"Goal {goal_loc} not reached")
+        return []
 
     path = []
     path.append(goal_loc)

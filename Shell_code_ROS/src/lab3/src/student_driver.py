@@ -14,8 +14,21 @@ class StudentDriver(Driver):
 	This class implements the logic to move the robot to a specific place in the world.  All of the
 	interesting functionality is hidden in the parent class.
 	'''
-	def __init__(self):
+	def __init__(self, threshold=0.1):
 		super().__init__('odom')
+		# Set the threshold to a reasonable number
+		self._threshold = threshold
+
+	def close_enough_to_waypoint(self, distance, target, lidar):
+		'''
+		This function is called perioidically if there is a waypoint set.  This is where you should put any code that
+		has a smarter stopping criteria then just checking the distance. See get_twist for the parameters; distance
+		is the current distance to the target.
+		'''
+		# Default behavior.
+		if distance < self._threshold:
+			return True
+		return False
 
 	def get_twist(self, target, lidar):
 		'''
