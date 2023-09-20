@@ -180,33 +180,6 @@ class ParticleFilter:
         axs. plot(robot_ground_truth.robot_loc, 0.05, 'xb', markersize=10)
 
 
-    def plot_particles_with_weights(self, axs, world_ground_truth, robot_ground_truth):
-        """Plot the particles (scaled by weights) and the doors and where the robot actually is
-        @param axs - window to draw in
-        @param world_ground_truth - for the doors
-        @param robot_ground_truth - for the robot's location"""
-
-        # Plot "walls"
-        height = 0.75
-        axs.plot([0.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, height, height, 0.0], '-k')
-        # Plot "doors"
-        door_width = 0.95 * world_ground_truth.door_width / 2.0
-        for d in world_ground_truth.doors:
-            axs.plot([d - door_width, d - door_width, d + door_width, d + door_width],
-                     [0.0, 0.5 * height, 0.5 * height, 0.0], '-r')
-
-        min_ws = np.min(self.weights)
-        max_ws = np.max(self.weights)
-        if np.isclose(max_ws, min_ws):
-            max_ws = min_ws + 0.01
-
-        for w, p in zip(self.weights, self.particles):
-            h = 0.2 * (w - min_ws) / (max_ws - min_ws) + 0.05
-            axs.plot([p, p], [0.01, 0.01 + h], '-g')
-
-        # Robot
-        axs.plot(robot_ground_truth.robot_loc, 0.05, 'xb', markersize=10)
-
 
 def convert_histogram(pf, n_bins):
     """ Convert the particle filter to an (approximate) pmf in order to compare results
