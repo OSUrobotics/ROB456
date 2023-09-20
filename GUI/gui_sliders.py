@@ -47,7 +47,7 @@ class SliderFloatDisplay(QWidget):
     def value(self):
         """Return the current value of the slider"""
         val = (self.slider.value() / self.ticks) * self.range + self.low
-        print(f"Get value: name {self.name} value {val} text {self.display.text()}")
+        # print(f"Get value: name {self.name} value {val} text {self.display.text()}")
         return val
 
     # Called when the value changes - resets text
