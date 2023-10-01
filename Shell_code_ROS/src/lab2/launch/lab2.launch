@@ -6,4 +6,6 @@
 	<!-- Start a custom rviz.  -->
 	<node pkg="rviz" name="rviz" type="rviz" args="-d $(find lab2)/config/driver.rviz" />
 
+	<node pkg="lab2" name="send_points" type="send_points.py"/>
+
 </launch>
