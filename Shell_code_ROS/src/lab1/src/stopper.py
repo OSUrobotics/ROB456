@@ -39,7 +39,7 @@ def callback(scan):
 	# TODO: Determine what the closest obstacle/reading is for scans in front of the robot
 	#  Step 1: Determine which of the range readings correspond to being "in front of" the robot (see comment at top)
 	#    Remember that robot scans are in the robot's coordinate system - theta = 0 means straight ahead
-	#  Step 2: Get the minimum distance to the closest object
+	#  Step 2: Get the minimum distance to the closest object (use only scans "in front of" the robot)
 	#  Step 3: Use the closest distance from above to decide when to stop
 	#  Step 4: Scale how fast you move by the distance to the closet object (tanh is handy here...)
 	#  Step 5: Make sure to actually stop if close to 1 m
@@ -57,7 +57,7 @@ def callback(scan):
 	t.angular.z = 0.0
 
 	shortest = 0
-# YOUR CODE HERE
+ # YOUR CODE HERE
 
 	# Send the command to the robot.
 	publisher.publish(t)
