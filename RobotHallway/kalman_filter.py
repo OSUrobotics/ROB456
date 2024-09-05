@@ -36,7 +36,7 @@ class KalmanFilter:
         @param dist_reading - distance reading returned by sensor"""
 
         # TODO: Calculate C and K, then update self.mu and self.sigma
-# YOUR CODE HERE
+        # YOUR CODE HERE
         return self.mu, self.sigma
 
     # Given a movement, update Gaussian
@@ -50,7 +50,7 @@ class KalmanFilter:
         @return : mu and sigma of new current estimated location """
 
         # TODO: Update mu and sigma by Ax + Bu equation
-# YOUR CODE HERE
+        # YOUR CODE HERE
         return self.mu, self.sigma
 
     def one_full_update(self, robot_ground_truth, robot_sensor, u: float, z: float):
@@ -68,7 +68,7 @@ class KalmanFilter:
         # TODO:
         #  Step 1 predict: update your belief by the action (move the Gaussian)
         #  Step 2 correct: do the correction step (move the Gaussian to be between the current mean and the sensor reading)
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
 
 

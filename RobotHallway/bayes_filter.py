@@ -27,7 +27,7 @@ class BayesFilter:
         @param n_bins - the number of bins to divide the unit interval (0,1) up into """
 
         # TODO create an array with n_bins, set to uniform distribution
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
     def update_belief_sensor_reading(self, world_ground_truth, robot_sensor, sensor_reading):
         """ Update your probabilities based on the sensor reading being true (door) or false (no door)
@@ -52,7 +52,7 @@ class BayesFilter:
         #     You'll need to know if the bin is in front of the door or not to compute this
         # You might find enumerate useful
         #  for i, p in enumerate(self.probabilities):
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
     def update_belief_move_left(self, robot_ground_truth):
         """ Update the probabilities assuming a move left.
@@ -69,7 +69,7 @@ class BayesFilter:
         # Don't forget to normalize - but if you've done this correctly then the sum should be very, very close to
         #  one already - any error is just numerical
 
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
     def update_belief_move_right(self, robot_ground_truth):
         """ Update the probabilities assuming a move right.
@@ -77,13 +77,14 @@ class BayesFilter:
         @param robot_ground_truth - robot location, has the probabilities for actually moving left if move_left called"""
 
         # bayes assignment
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
     def one_full_update(self, world_ground_truth, robot_ground_truth, robot_sensor, u: str, z: bool):
         """This is the full update loop that takes in one action, followed by a sensor reading
         Lec 2_2 State estimation, Bayes filter algorithm section
         Slides: https://docs.google.com/presentation/d/1V_l8GNlGgkvzVMheff_tM7tJlJ4A1y-363QB5hQpHVQ/edit#slide=id.g14a2b1b8e73_0_396
         Assumes the robot has been moved by the action u, then a sensor reading was taken (see test function below)
+        Note: Do NOT call robot_sensor.query_door OR robot_ground_truth.move_left here - that was done FOR you already (the u and z params)
         @
         @param world_ground_truth - has where the doors actually are
         @param robot_sensor - has the robot sensor probabilities
@@ -92,9 +93,9 @@ class BayesFilter:
         @param z will be one of True or False (door y/n)
         """
         # TODO:
-        #  Step 1 predict: update your belief by the action (call one of move_left or move_right)
+        #  Step 1 predict: update your belief by the action (call one of update_belief_move_left or update_belief_move_right)
         #  Step 2 correct: do the correction step (update belief by the sensor reading)
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
 
 def check_uniform(bf):
@@ -267,10 +268,9 @@ def test_move_update(b_print=True):
     # This SHOULD insure that you get the same answer as the solutions, provided you're only calling uniform within
     #  robot_ground_truth.move and robot_sensor.query door*
     seed = 3
-    np.random.seed(seed)
-
+ 
     # Try different probability values
-    for answer in answers["answers"]:
+    for ia, answer in enumerate(answers["answers"]):
         # This SHOULD insure that you get the same answer as the solutions, provided you're only calling uniform within
         #  robot_ground_truth.move and robot_sensor.query_door*
         np.random.seed(seed)
@@ -300,7 +300,7 @@ def test_move_update(b_print=True):
 
         check_seed = np.random.uniform()
         if not np.isclose(check_seed, answer["check_seed"]):
-            print("Warning: random number generator is off, may report incorrect result")
+            print("Warning: random number generator is off, may report incorrect result, answer loop {ia}")
 
         if not np.any(np.isclose(answer["result"], bayes_filter.probabilities, atol=0.01)):
             ValueError(f"Probabilities are different \n{answer['result']} \n{bayes_filter.probabilities}")

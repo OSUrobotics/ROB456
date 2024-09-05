@@ -246,7 +246,7 @@ class DrawRobotAndWalls(QWidget):
 
         # Put a dashed line indicating the last noise sample for move
         pen.setColor(Qt.red)
-        pen.setWidth(1.5)
+        pen.setWidth(2)
         qp.setPen(pen)
         qp.drawLine(QPoint(self.x_map(self.robot_ground_truth.robot_loc + self.last_move_noise), self.y_map(0)),
                     QPoint(self.x_map(self.robot_ground_truth.robot_loc + self.last_move_noise), self.y_map(0.075)))

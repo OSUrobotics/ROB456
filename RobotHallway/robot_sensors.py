@@ -22,7 +22,7 @@ class RobotSensors:
         #  TODO: Add another dictionary for the distance to the wall sensor noise
         # Note: The actual values in the dictionaries will be set in the calls to set_* below
         # Second note: all variables should be referenced with self. or they will disappear
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
         # In the GUI version, these will be called with values from the GUI after the RobotSensors instance
         #   has been created
@@ -39,7 +39,7 @@ class RobotSensors:
         # TODO: Store the input values in TWO dictionaries (one for the door there, one for no door)
         #  Reminder: You should have created the dictionary to hold the dictionaries in the __init__ method above
         #  Second note: all variables should be referenced with self.
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
     def set_distance_wall_sensor_probabilities(self, sigma=0.1):
         """ Setup the wall sensor probabilities (store them in the dictionary)
@@ -48,7 +48,7 @@ class RobotSensors:
 
         # Kalman assignment
         # TODO: Store the mean and standard deviation
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
     def query_door(self, robot_gt, world_gt):
         """ Query the door sensor
@@ -70,7 +70,7 @@ class RobotSensors:
         # STEP 1 - generate a random number between 0 and 1
         # STEP 2 - use the random number (and your first if statement) to determine if you should return True or False
         # Note: This is just the sample_boolean code from your probabilities assignment
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
     def query_distance_to_wall(self, robot_gt):
         """ Return a distance reading (with correct noise) of the robot's location
@@ -82,7 +82,7 @@ class RobotSensors:
         # Kalman assignment
         # TODO: Return the distance to the wall (with noise)
         #  This is the Gaussian assignment from your probabilities homework
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
 
 def test_discrete_sensors(b_print=True):
