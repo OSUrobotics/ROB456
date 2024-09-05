@@ -197,7 +197,7 @@ def dijkstra(im, robot_loc, goal_loc):
         #    Now do the instructions from the slide (the actual algorithm)
         #  Lec 8_1: Planning, at the end
         #  https://docs.google.com/presentation/d/1pt8AcSKS2TbKpTAVV190pRHgS_M38ldtHQHIltcYH6Y/edit#slide=id.g18d0c3a1e7d_0_0
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
     # Now check that we actually found the goal node
     try_2 = goal_loc
@@ -216,7 +216,7 @@ def dijkstra(im, robot_loc, goal_loc):
     path = []
     path.append(goal_loc)
     # TODO: Build the path by starting at the goal node and working backwards
-# YOUR CODE HERE
+    # YOUR CODE HERE
 
     return path
 

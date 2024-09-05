@@ -109,7 +109,7 @@ def is_reachable(im, pix):
     # Returns True (the pixel is adjacent to a pixel that is free)
     #  False otherwise
     # You can use four or eight connected - eight will return more points
-# YOUR CODE HERE
+    # YOUR CODE HERE
     return False
 
 
@@ -120,7 +120,7 @@ def find_all_possible_goals(im):
     @param im - thresholded image
     @return dictionary or list or binary image of possible pixels"""
 
-# YOUR CODE HERE
+    # YOUR CODE HERE
 
 
 def find_best_point(im, possible_points, robot_loc):
@@ -129,7 +129,7 @@ def find_best_point(im, possible_points, robot_loc):
     @param possible_points - possible points to chose from
     @param robot_loc - location of the robot (in case you want to factor that in)
     """
-# YOUR CODE HERE
+    # YOUR CODE HERE
 
 
 def find_waypoints(im, path):
@@ -139,7 +139,7 @@ def find_waypoints(im, path):
     @ return - a new path"""
 
     # Again, no right answer here
-# YOUR CODE HERE
+    # YOUR CODE HERE
 
 if __name__ == '__main__':
     # Doing this here because it is a different yaml than JN

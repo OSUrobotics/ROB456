@@ -62,7 +62,7 @@ def sample_boolean_variable(info_variable):
 
     # See slides - if the random variable is below the probability of returning true, return true. Otherwise, return false
     # TODO: Return True or False
-# YOUR CODE HERE
+    # YOUR CODE HERE
 
 
 # Test function
@@ -125,7 +125,7 @@ def sample_discrete_variable(info_variable):
     #  for JUST the syntax test case - it won't work for test_discrete
     #
     # TODO - return one of the key values in the dictionary.
-# YOUR CODE HERE
+    # YOUR CODE HERE
 
 
 def test_discrete():
@@ -183,7 +183,7 @@ def sample_bin_variable(info_variable):
     #  Step 2: Use np.floor to find the INDEX of the bin
     #  Step 3: Calculate the center of the bin with that index on the (start, stop) interval
     # Note: You could find the index of the bin on the (start,stop) interval, but that requires more math...
-# YOUR CODE HERE
+    # YOUR CODE HERE
 
 
 def test_bins():
@@ -227,7 +227,7 @@ def sample_gaussian_variable(info_variable):
     @return A sample from the Gaussian"""
 
     # TODO: Call random.normal here and return a number
-# YOUR CODE HERE
+    # YOUR CODE HERE
 
 
 def test_gaussian(b_print=True):
@@ -286,7 +286,7 @@ class SampleProbabilityMassFunction:
         #  Where the bins start and end
         #  The amount of probability to put in each bin
         #  The running sum
-# YOUR CODE HERE
+            # YOUR CODE HERE
         # Where the center of each bin is (see sample_bin_variable above)
         self.bin_centers = np.zeros(n_bins_syntax)
         
@@ -309,7 +309,7 @@ class SampleProbabilityMassFunction:
         # Not fancy version: Use a for loop
         # Fancy version: Use np.where
         # TODO - return correct bin center
-# YOUR CODE HERE
+        # YOUR CODE HERE
 
     def _generate_counts(self, n_samples):
         """ Generate n samples
