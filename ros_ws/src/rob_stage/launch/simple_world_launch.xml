@@ -1,0 +1,14 @@
+<launch>
+
+  <!-- Launch a basic version of Stage. -->
+  
+  <include file="$(find-pkg-share stage_ros2)/launch/stage.launch.py">
+    <arg name="world" value="cave" />
+    <arg name="one_tf_tree" value="false" />
+    <arg name="suse_stamped_velocity" value="true" />
+  </include>
+
+  <!-- Launch an rviz with the right configuration. -->
+  <!-- executable cmd="rviz2 -d $(find-pkg-share rob599_stage)/config/cave3.rviz" / -->
+
+</launch>

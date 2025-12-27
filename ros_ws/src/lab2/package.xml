@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>lab2</name>
+  <version>0.0.0</version>
+  <description>ROB 456 and 514 Go around and go to a goal assignment </description>
+  <maintainer email="grimmc@oregonstate.edu">cindygr</maintainer>
+  <license>BSD-3-Clause</license>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>ament_xmllint</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <depend>rob_stage</depend>
+  <depend>nav_targets</depend>
+  
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
