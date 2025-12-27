@@ -16,9 +16,13 @@
 
 # The ever-present numpy
 import numpy as np
+import os
 
 # Your path planning code
-import lab3.path_planning as path_planning
+if os.path.exists("lab3"):
+    import lab3.path_planning as path_planning
+else:
+    import path_planning as path_planning
 
 
 # -------------- Showing start and end and path ---------------
@@ -33,38 +37,27 @@ def plot_with_explore_points(im_threshhold, zoom=1.0, robot_loc=None, explore_po
     # Putting this in here to avoid messing up ROS
     import matplotlib.pyplot as plt
 
-    fig, axs = plt.subplots(1, 2)
-    axs[0].imshow(im_threshhold, origin='lower', cmap="gist_gray")
-    axs[0].set_title("original image")
-    axs[1].imshow(im_threshhold, origin='lower', cmap="gist_gray")
-    axs[1].set_title("threshold image")
-    """
-    # Used to double check that the is_xxx routines work correctly
-    for i in range(0, im_threshhold.shape[1]-1, 10):
-        for j in range(0, im_threshhold.shape[0]-1, 2):
-            if is_reachable(im_thresh, (i, j)):
-                axs[1].plot(i, j, '.b')
-    """
+    fig, axs = plt.subplots(1, 1)
+    axs.imshow(im_threshhold, origin='lower', cmap="gist_gray")
+    axs.set_title("threshold image")
 
     # Show original and thresholded image
     if explore_points is not None:
         for p in explore_points:
-            axs[1].plot(p[0], p[1], '.b', markersize=2)
+            axs.plot(p[0], p[1], '.b', markersize=2)
 
-    for i in range(0, 2):
-        if robot_loc is not None:
-            axs[i].plot(robot_loc[0], robot_loc[1], '+r', markersize=10)
-        if best_pt is not None:
-            axs[i].plot(best_pt[0], best_pt[1], '*y', markersize=10)
-        axs[i].axis('equal')
+    if robot_loc is not None:
+        axs.plot(robot_loc[0], robot_loc[1], '+r', markersize=10)
+    if best_pt is not None:
+        axs.plot(best_pt[0], best_pt[1], '*y', markersize=10)
+    axs.axis('equal')
 
-    for i in range(0, 2):
-        # Implements a zoom - set zoom to 1.0 if no zoom
-        width = im_threshhold.shape[1]
-        height = im_threshhold.shape[0]
+    # Implements a zoom - set zoom to 1.0 if no zoom
+    width = im_threshhold.shape[1]
+    height = im_threshhold.shape[0]
 
-        axs[i].set_xlim(width / 2 - zoom * width / 2, width / 2 + zoom * width / 2)
-        axs[i].set_ylim(height / 2 - zoom * height / 2, height / 2 + zoom * height / 2)
+    axs.set_xlim(width / 2 - zoom * width / 2, width / 2 + zoom * width / 2)
+    axs.set_ylim(height / 2 - zoom * height / 2, height / 2 + zoom * height / 2)
 
 
 # -------------- For converting to the map and back ---------------
@@ -136,19 +129,55 @@ def find_waypoints(im, path):
     # Again, no right answer here
     # YOUR CODE HERE
 
-if __name__ == '__main__':
-    im, im_thresh = path_planning.open_image("map.pgm")
 
-    robot_start_loc = (1940, 1953)
+def test_unseen(im, pts):
+    for pt in pts:
+        count_free = 0
+        count_unseen = 0
+        for ix in range(-1, 2):
+            for iy in range(-1, 2):
+                if path_planning.is_free(im, (pt[0] + ix, pt[1] + iy)):
+                    count_free += 1
+                elif path_planning.is_unseen(im, (pt[0] + ix, pt[1] + iy)):
+                    count_unseen += 1
+        if count_free == 0 or count_unseen == 0:
+            return False
+    return True
+
+
+def test_best(im, pt):
+    """ Check that the selected point has at least 3 free neighbors"""
+    count_free = 0
+    count_unseen = 0
+    for ix in range(-1, 2):
+        for iy in range(-1, 2):
+            if path_planning.is_free(im, (pt[0] + ix, pt[1] + iy)):
+                count_free += 1
+            elif path_planning.is_unseen(im, (pt[0] + ix, pt[1] + iy)):
+                count_unseen += 1
+    if count_free < 3:
+        return False
+    if count_free + count_unseen != 9:
+        return False
+    return True
+
+
+if __name__ == '__main__':
+    _, im_thresh = path_planning.open_image("map.pgm")
+
+    robot_start_loc = (60, 40)
 
     all_unseen = find_all_possible_goals(im_thresh)
     best_unseen = find_best_point(im_thresh, all_unseen, robot_loc=robot_start_loc)
 
-    plot_with_explore_points(im_thresh, zoom=0.1, robot_loc=robot_start_loc, explore_points=all_unseen, best_pt=best_unseen)
+    assert test_unseen(im=im_thresh, pts=all_unseen)
+    assert test_best(im=im_thresh, pt=best_unseen)
+
+    plot_with_explore_points(im_thresh, zoom=1.0, robot_loc=robot_start_loc, explore_points=all_unseen, best_pt=best_unseen)
 
     path = path_planning.dijkstra(im_thresh, robot_start_loc, best_unseen)
     waypoints = find_waypoints(im_thresh, path)
-    path_planning.plot_with_path(im, im_thresh, zoom=0.1, robot_loc=robot_start_loc, goal_loc=best_unseen, path=waypoints)
+    path_planning.plot_with_path(im_thresh, zoom=1.0, robot_loc=robot_start_loc, goal_loc=best_unseen, path=waypoints)
 
     # Depending on if your mac, windows, linux, and if interactive is true, you may need to call this to get the plt
     # windows to show

@@ -229,7 +229,6 @@ def open_image(im_name):
     fname = "Data/" + im_name
     im = imageio.imread(fname)
     
-
     wall_threshold = 0.7
     free_threshold = 0.9
     try:
