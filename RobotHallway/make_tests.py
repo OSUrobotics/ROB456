@@ -9,11 +9,17 @@ import json
 from world_ground_truth import WorldGroundTruth
 from robot_sensors import RobotSensors
 from robot_ground_truth import RobotGroundTruth
-from particle_filter import ParticleFilter, convert_histogram
 
-def _get_path_name(fname: str):
+def _get_path_name(fname: str, b_read:bool =True):
     """ Just checks the directory is correct, and adds RobotHallway if needed"""
     from os import getcwd
+    from os.path import exists
+    if b_read:
+        if exists(fname):
+            return fname
+        else:
+            return "RobotHallway/" + fname
+
     cur_path = getcwd().split("/")
     if cur_path[-1] != "RobotHallway":
         fname = "RobotHallway/" + fname
@@ -161,7 +167,7 @@ def test_particle_filter_update(b_check_res, b_print):
 
     # Read in some move sequences and compare your result to the correct answer
     import json
-    from particle_filter import ParticleFilter
+    from particle_filter import ParticleFilter, convert_histogram
     with open(_get_path_name("Data/check_particle_filter.json"), "r") as f:
         answers = json.load(f)
 

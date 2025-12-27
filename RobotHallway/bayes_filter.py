@@ -300,7 +300,6 @@ if __name__ == '__main__':
     test_bayes_filter_sensor_update(b_print_test)
     test_move_one_direction(b_print_test)
 
-    from make_tests import test_bayes_move_update
     test_bayes_move_update(b_print_test)
 
     print("Done")
