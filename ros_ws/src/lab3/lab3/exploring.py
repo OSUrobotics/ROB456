@@ -19,9 +19,9 @@ import numpy as np
 import os
 
 # Your path planning code
-if os.path.exists("lab3"):
+try:
     import lab3.path_planning as path_planning
-else:
+except:
     import path_planning as path_planning
 
 
@@ -106,15 +106,15 @@ def find_all_possible_goals(im):
     It is probably easier to do this, THEN cull it down to some reasonable places to try
     This is because of noise in the map - there may be some isolated pixels
     @param im - thresholded image
-    @return dictionary or list or binary image of possible pixels"""
+    @return list of possible pixel (x,y) locations"""
 
     # YOUR CODE HERE
 
 
-def find_best_point(im, possible_points, robot_loc):
+def find_best_point(im, possible_points : list, robot_loc):
     """ Pick one of the unseen points to go to
     @param im - thresholded image
-    @param possible_points - possible points to chose from
+    @param possible_points - possible points to chose from (list of tuples)
     @param robot_loc - location of the robot (in case you want to factor that in)
     """
     # YOUR CODE HERE

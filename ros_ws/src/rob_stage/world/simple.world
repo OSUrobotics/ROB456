@@ -49,6 +49,5 @@ pioneer2dx_base_no_sonar
   trail_length 400
 )
 
-box(name "box3" pose [ 4 -5 0 0 ])
 box(name "box1" pose [ 5 -5 0 0 ])
-box(name "box2" pose [ 6 -5 0 0 ])
+box(name "box2" pose [ -5 4 0 0 ])

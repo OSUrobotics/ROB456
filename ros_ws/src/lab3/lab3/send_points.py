@@ -29,8 +29,8 @@ from tf2_ros.transform_listener import TransformListener
 from tf2_ros.buffer import Buffer
 
 # Your path planning
-from lab3.path_planning import dijkstra, convert_image, is_free
-from lab3.exploring import find_all_possible_goals, find_best_point
+from lab3.path_planning import dijkstra, is_free
+from lab3.exploring import find_all_possible_goals, find_best_point, find_waypoints
 
 
 class SendPoints(Node):
@@ -47,14 +47,17 @@ class SendPoints(Node):
 		# An action server to send the requests to.
 		self.action_client = ActionClient(node=self, action_type=NavTarget, action_name='nav_target')
 
-		# Save the points for when we startup
-		self.current_point = 0
-		self.points = [p for p in points]
+		# Save the goal points for when we start up the action client/server
+		self.next_goal_index = 0
+		self.goal_points = [p for p in points]
+		self.last_distance = 1e30  # The last distance to goal from the callback
 
 		# Parameters that hold the current state of the action client
-		self._send_goal_future = None
+		#   You don't need to mess with these
 		self._goal_handle = None
+		self._send_goal_future = None
 		self._result_future = None
+		self._cancel_future = None
 
 		# Subscriber after publisher; this is the map
 		self.map_subscriber = self.create_subscription(
@@ -69,12 +72,13 @@ class SendPoints(Node):
         
 		# This sets up a listener for all of the transform types created
 		self.transform_listener = TransformListener(self.tf_buffer, self)
-
 		
 		# Timer to make sure we publish the target marker and start the goal sending
 		self.start_timer = self.create_timer(1.0, self._start_action_client)
 
-		# Two sets of markers - one for the goal points, one for reachable points, one for path points
+		# Three sets of markers - one for the goal points, one for reachable points, one for path points
+		#    The last two are for you to use when getting paths/reachable points from the map
+		#    Do not set these directly - use set_xxx methods
 		self.goal_markers = None
 		self.path_markers = None
 		self.reachable_markers = None
@@ -84,28 +88,32 @@ class SendPoints(Node):
 		self.path_marker_pub = self.create_publisher(MarkerArray, 'path_points', 1)
 		self.reachable_marker_pub = self.create_publisher(MarkerArray, 'reachable_points', 1)
 
+
 	def _start_action_client(self):
-		""" Call this to start sending goal, or send the next goal"""
+		""" This gets called by the timer whenever a new set of goals needs to be kicked off"""
 
 		# Cancel the timer - we're starting
 		self.start_timer.cancel()
 
-		if self.current_point == 0:
+		if self.next_goal_index == 0:
 			# Wait for driver to start
 			self.get_logger().info("Start driver.py to get started")
 			self.action_client.wait_for_server()
 		
-		if self.current_point >= len(self.points):
+		# Run out of goal points
+		if self.next_goal_index >= len(self.goal_points):
+			self.next_goal_index += 1
 			self.get_logger().info("No more points to send")
 			return
 			
-		if self.current_point == 0:
+		if self.next_goal_index == 0:
 			# First time through - make the marker points and publish them
+			#. NOTE: You should call _set_goal_markers() anytime you change points()
 			self._set_goal_markers()
 
-		# send the current goal
-		pt = self.points[self.current_point]
-		self.current_point += 1
+		# send the next goal
+		pt = self.goal_points[self.next_goal_index]
+		self.next_goal_index += 1
 
 		# Create the goal point in the world coordinate frame
 		goal = NavTarget.Goal()
@@ -116,7 +124,7 @@ class SendPoints(Node):
 		goal.goal.point.y = float(pt[1])
 		goal.goal.point.z = 0.0
 
-		self.get_logger().info(f'Sending goal request... {self.current_point-1} of {len(self.points)} {pt[0], pt[1]}')
+		self.get_logger().info(f'Sending goal request... {self.next_goal_index-1} of {len(self.goal_points)} {pt[0], pt[1]}')
 
 		# Send the driver the message that we're ready to send a goal point
 		self._send_goal_future: Future = self.action_client.send_goal_async(goal=goal, 
@@ -140,13 +148,17 @@ class SendPoints(Node):
 	def _goal_done_callback(self, future : Future):
 		""" This gets called when the server says I finished the goal"""
 		result: NavTarget.Result = future.result().result
-		if result:
-			self.get_logger().info(f"Got to goal {self.current_point}, moving to next")
-			self.start_timer.reset() # Increment to the next goal	
+		if result.success:
+			self.get_logger().info(f"Got to goal {self.next_goal_index}, moving to next")
+			self.start_timer.reset()  # Increment to the next goal	
 		else:
 			# GUIDE: This is where you should flag if you want to bail on the current set of goals
 			# entirely or just skip to the next one
-			self.get_logger().info(f"Did not get to goal, stopping {self.current_point}")
+			self.get_logger().info(f"Did not get to goal, skipping {self.next_goal_index}")
+
+		self._send_goal_future = None
+		self._result_future = None
+		self._cancel_future = None
 
 	def _feedback_callback(self, feedback):
 		"""Every time driver loops in the action callback it send back the distance to the target as feedbackack
@@ -156,6 +168,64 @@ class SendPoints(Node):
 		
 		self.last_distance = feedback.feedback.distance.data
 		self.get_logger().info(f'Feedback: Distance: {feedback.feedback.distance.data}')
+
+	def _cancel_response_callback(self, future : Future):
+		""" This is a call and response to the server to check that it actually canceled the goal"""
+		cancel_response = future.result()
+		self.start_timer.reset()  # Increment to the next goal (if there is one)
+		self.get_logger().info(f'Cancel request accepted by server: {cancel_response.return_code}')
+		self._send_goal_future = None
+		self._result_future = None
+		self._cancel_future = None
+
+	def skip_current_goal(self):
+		""" Cancels the current goal and moves to the next (if any)
+		GUIDE: Use this to skip over the current goal. Do NOT call repeatedly - it takes a while to process"""
+		if not self._goal_handle:
+			self.get_logger().info(f"No active goals to skip")
+		elif self._cancel_future:
+			self.get_logger().info(f"Already skipping goal, wait for this to finish before skipping next")
+		else:
+			self.get_logger().info(f"Skipping to next goal {self.next_goal_index} of {len(self.goal_points)}")
+			self._cancel_future = self._goal_handle.cancel_goal_async()
+			self._cancel_future.add_done_callback(self._cancel_response_callback)
+
+	def completed_all_goals(self):
+		""" Returns True if all of the goals have been completed
+		GUIDE Use this to check if there are any goals left to do y/n"""
+		if self.next_goal_index > len(self.goal_points):
+			return True    # Went through all goals
+		
+	def add_more_goal_points(self, goal_pts: list):
+		""" Add more goal points; should be a list of tuples of x,y locations
+		GUIDE: Use this if you just want to append more goals to the current list"""
+		for pt in goal_pts:
+			self.goal_points.append(pt)
+
+		self._set_goal_markers()
+
+		# This will kick start sending more goal points if it's stopped sending
+		if self._result_future == None:
+			self.start_timer().reset()   # Increment to the next goal
+	
+	def replace_goal_points(self, goal_pts: list, skip_current: bool):
+		""" Replace the current list of goal points, and, optionally, skip the current
+		@param goal_pts: a list of tuples of x,y locations
+		@param skip_current: Will call skip-current for you after setting up new goals"""
+		self.next_goal_index = 0
+
+		# Just doing this to make sure the points you pass in are in the correct form
+		self.goal_points = []
+		for p in goal_pts:
+			self.goal_points.append((p[0], p[1]))
+		
+		if skip_current:
+			self.skip_current_goal()
+
+		self._set_goal_markers()
+		# This will kick start sending more goal points if it's stopped sending
+		if self._result_future == None:
+			self.start_timer.reset()   # Increment to the next goal
 
 	def _set_goal_markers(self):
 		""" Update the goal markers whenever the goals change"""
@@ -178,7 +248,7 @@ class SendPoints(Node):
 			line_marker.color.b = 1.0
 			line_marker.color.a = 1.0
 			line_marker.points = []
-			for p in self.points:
+			for p in self.goal_points:
 				pt = Point()
 				pt.x = p[0]
 				pt.y = p[1]
@@ -190,7 +260,7 @@ class SendPoints(Node):
 			self.goal_markers.markers.append(line_marker)
 
 			# Make the dots for the markers
-			for indx, point in enumerate(self.points):
+			for indx, point in enumerate(self.goal_points):
 				marker = Marker()
 				marker.header.frame_id = 'odom'
 				marker.header.stamp = self.get_clock().now().to_msg()
@@ -373,31 +443,62 @@ class SendPoints(Node):
 
 		self.get_logger().info(f"N free {np.count_nonzero(im_thresh == 255)}, N walls {np.count_nonzero(im_thresh == 0)}, N {np.count_nonzero(im_thresh == 128)}")
 
+
 		# Location of robot
 		transform = self.tf_buffer.lookup_transform('odom', 'base_link', rclpy.time.Time(), timeout=rclpy.duration.Duration(seconds=1.0))
 		robot_current_loc_in_map = (transform.transform.translation.x, transform.transform.translation.y)
 		robot_current_loc_in_image = self.from_map_to_image(map_msg=map_msg, pt_xy=robot_current_loc_in_map)
 		self.get_logger().info(f"Robot current location {robot_current_loc_in_map}")
 
-		# GUIDE: Decide if you need to find new goal points/find a new path
-		# This just looks for the last viable goal (that is free) - will grab a goal
-		#  that's already been seen
-		goal_loc_in_image = (map_msg.info.width // 2, map_msg.info.height // 2)
-		if self.points:
-			for p in self.points:
-				try_goal_loc_in_image = self.from_map_to_image(map_msg=map_msg, pt_xy=p)
-				if try_goal_loc_in_image[0] < map_msg.info.width and try_goal_loc_in_image[1] < map_msg.info.height:
-					if is_free(im_thresh, try_goal_loc_in_image):
-						goal_loc_in_image = try_goal_loc_in_image
+		# GUIDE: Change this to get just the points you might consider looking at and perhaps don't do it every time a map is made
+		all_unseen_pts = find_all_possible_goals(im_thresh)  # Your exploring code
+		reachable_pts = []
+		for p in all_unseen_pts:
+			map_xy = self.from_image_to_map(map_msg=map_msg, pt_uv=p)
+			reachable_pts.append(map_xy)
 
+		# This puts markers in RViz for all unseen points
+		self._set_reachable_markers(reachable_pts)
+
+		# GUIDE: This is currently set up to call path planning every iteration (which is probably not what you want)
+		#   If we're on the way to the current goal, path plan to the closest goal point that is reachable
+		#   If we're headed towards the last goal, get a goal from best_pt
+
+		# The final goal point in image coords
+		if len(self.goal_points) > 0:		
+			goal_loc_in_image = self.from_map_to_image(map_msg=map_msg, pt_xy=self.goal_points[-1])
+		else:
+			goal_loc_in_image = (map_msg.info.width // 2, map_msg.info.height // 2)
+
+		if 0 < goal_loc_in_image[0] < map_msg.info.width and 0 < goal_loc_in_image[1] < map_msg.info.height:
+			# Headed towards last goal and it is now in the free space of the robot
+			goal_loc_in_image = find_best_point(im, all_unseen_pts, robot_current_loc_in_image)  # Use your exploring code to find a good point
+			self.get_logger().info(f"Getting best {goal_loc_in_image} {is_free(im, goal_loc_in_image)}")
+		else:
+			# This just looks for the last viable goal (that is free) - will grab a goal
+			#  that's already been seen
+			if self.goal_points:
+				for p in self.goal_points:
+					try_goal_loc_in_image = self.from_map_to_image(map_msg=map_msg, pt_xy=p)
+					if try_goal_loc_in_image[0] < map_msg.info.width and try_goal_loc_in_image[1] < map_msg.info.height:
+						if is_free(im_thresh, try_goal_loc_in_image):
+							goal_loc_in_image = try_goal_loc_in_image
+
+		# GUIDE: This calls dijkstra with the goal location and plots the path that you return in RViz
+		#  Note: If you did not fix your code to deal with an unreachable point then this will handle that case
+		#   as an exception
+		path_pts = []
 		try:
 			path = dijkstra(im_thresh, robot_current_loc_in_image, goal_loc_in_image)
-
-			path_pts = []
-			for p in path:
+			self.get_logger().info(f"Path {path}")	
+			path_waypoints = find_waypoints(im_thresh, path)
+			self.get_logger().info(f"Path waypoints {path_waypoints}")	
+			for p in path_waypoints:
 				map_xy = self.from_image_to_map(map_msg=map_msg, pt_uv=p)
 				path_pts.append(map_xy)
-			self._set_path_markers(path_pts, 5)
+			self._set_path_markers(path_pts, 1)
+		except IndexError:
+			self.get_logger().info("Robot or goal location not in image map")
 		except ValueError:
 			if is_free(im_thresh, robot_current_loc_in_image):
 				if is_free(im_thresh, goal_loc_in_image):
@@ -407,14 +508,11 @@ class SendPoints(Node):
 			else:
 				self.get_logger().info(f"Robot starting location not free {robot_current_loc_in_image}")
 
-		# GUIDE: Change this to get just the points you might consider looking at
-		all_unseen = find_all_possible_goals(im_thresh)
-		reachable_pts = []
-		for k, _ in all_unseen.items():
-			map_xy = self.from_image_to_map(map_msg=map_msg, pt_uv=k)
-			reachable_pts.append(map_xy)
-
-		self._set_reachable_markers(reachable_pts)
+		# GUIDE: This replaces the last goal if the robot has gone through the first two.
+		# THIS IS AN EXAMPLE of how to replace goal points. You can also use skip_current_goal and add_more_goal_points
+		if self.completed_all_goals():		
+			self.get_logger().info(f"Replacing way points with new ones {path_pts}")	
+			self.replace_goal_points(path_pts, False)
 
 
 # Unlike all the previous code, here we'll start up with a list of points to go to
@@ -423,7 +521,7 @@ def main(args=None):
 	rclpy.init(args=args)
 
 	# Create a list of points that will take the robot through the map
-	points = [(-4.5, -3.0), (-4.5, 0.0), (1.0, 0.0)]
+	points = [(-4.5, -3.0), (-4.5, 0.0), (-1.0, 0.0)]
 	send_points = SendPoints(points)
 
 	# Multi-threaded execution

@@ -143,20 +143,18 @@ def dijkstra(im, robot_loc=(0, 0), goal_loc=(0, 0)):
     @param goal_loc - where to go to (i,j)
     @returns a list of tuples"""
 
-    # Sanity checks for ROS 2 assignment - these should properly trigger errors, but
-    #. that makes it hard to debug the ROS 2 assignment
-    try:
-        if not is_free(im, robot_loc):
-            print(f"ERROR: Start location {robot_loc} is not in the free space of the map")
-            return []
+    # Sanity checks for ROS 2 assignment - these will trigger try-catch errors in the ros2 lab3 assignment
+    if not (0 <= robot_loc[0] < im.shape[1] and 0 <= robot_loc[1] < im.shape[0]):
+        raise IndexError(f"ERROR: Robot location {robot_loc} is not in map {im.shape}")
+    if not (0 <= goal_loc[0] < im.shape[1] and 0 <= goal_loc[1] < im.shape[0]):
+        raise IndexError(f"ERROR: Goal location {robot_loc} is not in map {im.shape}")
+    
+    if not is_free(im, robot_loc):
+        raise ValueError(f"ERROR: Start location {robot_loc} is not in the free space of the map")
 
-        if not is_free(im, goal_loc):
-            print(f"ERROR: Goal location {goal_loc} is not in the free space of the map")
-            return []
-    except IndexError:
-            print(f"ERROR: robot {robot_loc} or {goal_loc} are not in the map {im.shape}")
-            return []
-
+    if not is_free(im, goal_loc):
+        raise ValueError(f"ERROR: Goal location {goal_loc} is not in the free space of the map")
+ 
     # The priority queue itself is just a list, with elements of the form (weight, (i,j))
     #    - i.e., a tuple with the first element the weight/score, the second element a tuple with the pixel location
     priority_queue = []
@@ -225,10 +223,19 @@ def open_image(im_name):
     import yaml as yaml
 
     # Needed for reading in map info
-    from os import open, path
-    fname = "Data/" + im_name
-    im = imageio.imread(fname)
-    
+    import os
+    fnames = ["Data/" + im_name, 
+              "Assignments/Data/" + im_name, 
+              "Skills/Data/" + im_name,
+              "../../../../Skills/Data/" + im_name,
+              "../../../../Assignments/Data" + im_name,
+              ]
+    im = None
+    print(f"{os.getcwd()}")
+    for fname in fnames:
+        if os.path.exists(fname):
+            im = imageio.imread(fname)
+   
     wall_threshold = 0.7
     free_threshold = 0.9
     try:

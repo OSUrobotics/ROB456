@@ -106,7 +106,8 @@ class Lab3Driver(Node):
 		# Timer to make sure we publish the target marker (once we get a goal)
 		self.marker_timer = self.create_timer(1.0, self._marker_callback)
 
-		self.count_since_last_scan = 0
+		self.print_twist_messages = False
+		self.print_distance_messages = False
 
 	def zero_twist(self):
 		"""This is a helper class method to create and zero-out a twist"""
@@ -131,7 +132,6 @@ class Lab3Driver(Node):
 				self.target_marker.action = Marker.DELETE
 				self.target_pub.publish(self.target_marker)
 				self.target_marker = None
-				self.get_logger().info(f"Driver: Had an existing target marker; removing")
 			return
 		
 		# If we do not currently have a marker, make one
@@ -139,8 +139,6 @@ class Lab3Driver(Node):
 			self.target_marker = Marker()
 			self.target_marker.header.frame_id = self.goal.header.frame_id
 			self.target_marker.id = 0
-		
-			self.get_logger().info(f"Driver: Creating Marker")
 
 		# Build a marker for the target point
 		#   - this prints out the green dot in RViz (the current target)
@@ -175,11 +173,15 @@ class Lab3Driver(Node):
 	
 	def cancel_callback(self, goal_handle : ServerGoalHandle):
 		"""Accept or reject a client request to cancel an action."""
-		self.get_logger().info('Received cancel request')
+		self.get_logger().info('Received a cancel request')
 
 		# Make sure our goal is removed
 		self.goal = None
 
+		# ...and robot stops
+		t = self.zero_twist()
+		self.cmd_pub.publish(t)
+				
 		# Timer to make sure we remove the current target (if there is one)
 		self.marker_timer.reset()
 
@@ -217,9 +219,15 @@ class Lab3Driver(Node):
 		self.set_target()
 
 		# Keep publishing feedback, then sleeping (so the laser scan can happen)
-		# GUIDE: If you aren't making progress, stop the while loop and mark the goal as failed
+		# GUIDE for Lab3: If you aren't making progress, stop the while loop and mark the goal as failed
 		rate = self.create_rate(0.5)
 		while not self.close_enough():
+			if not self.goal:
+				# GUIDE: This will get called in lab 3 if you cancel a goal
+				self.get_logger().info(f"Goal was canceled")
+
+				return result
+			
 			feedback = NavTarget.Feedback()
 			feedback.distance.data = self.distance_to_target()
 			
@@ -276,10 +284,12 @@ class Lab3Driver(Node):
 
 			self.target.point.x = rot_x
 			self.target.point.y = rot_y
-			self.get_logger().info(f'Target relative to robot: ({self.target.point.x:.2f}, {self.target.point.y:.2f}), orig ({self.goal.point.x, self.goal.point.y})')
+			if self.print_distance_messages:
+				self.get_logger().info(f'Target relative to robot: ({self.target.point.x:.2f}, {self.target.point.y:.2f}), orig ({self.goal.point.x, self.goal.point.y})')
 			
 		else:
-			self.get_logger().info(f'No target to get distance to')
+			if self.print_distance_messages:
+				self.get_logger().info(f'No target to get distance to')
 			self.target = None		
 		
 		# GUIDE: Calculate any additional variables here
@@ -292,9 +302,8 @@ class Lab3Driver(Node):
 		""" Lidar scan callback
 		@param scan - has information about the scan, and the distances (see stopper.py in lab1)"""
 	
-		self.get_logger().info("In scan callback")
-		# Got a scan - set back to zero
-		self.count_since_last_scan = 0
+		if self.print_twist_messages:
+			self.get_logger().info("In scan callback")
 
 		# If we have a goal, then act on it, otherwise stay still
 		if self.goal:
@@ -306,7 +315,8 @@ class Lab3Driver(Node):
 		else:
 			t = self.zero_twist()
 			#t.twist.linear.x = 0.1
-			self.get_logger().info(f"No goal, sitting still")
+			if self.print_twist_messages:
+				self.get_logger().info(f"No goal, sitting still")
 
 		# Publish the new twist
 		self.cmd_pub.publish(t)
@@ -349,7 +359,8 @@ class Lab3Driver(Node):
 
 		# t.twist.linear.x = max_speed
 		# t.twist.angular.z = 0.0
-		self.get_logger().info(f"Setting twist forward {t.twist.linear.x} angle {t.twist.angular.z}")
+		if self.print_twist_messages:
+			self.get_logger().info(f"Setting twist forward {t.twist.linear.x} angle {t.twist.angular.z}")
 		return t			
 
 

@@ -45,10 +45,9 @@ from tf2_geometry_msgs import do_transform_point
 
 # This sets up multi-threading so the laser scan can happen at the same time we're processing the target goal
 from rclpy.executors import MultiThreadedExecutor
-import time
 
 
-class Lab2Driver(Node):
+class Lab3Driver(Node):
 	def __init__(self, threshold=0.2):
 		""" We have parameters this time
 		@param threshold - how close do you have to be before saying you're at the goal? Set to width of robot
@@ -108,6 +107,8 @@ class Lab2Driver(Node):
 		self.marker_timer = self.create_timer(1.0, self._marker_callback)
 
 		self.count_since_last_scan = 0
+		self.print_twist_messages = False
+		self.print_distance_messages = False
 
 	def zero_twist(self):
 		"""This is a helper class method to create and zero-out a twist"""
@@ -176,11 +177,15 @@ class Lab2Driver(Node):
 	
 	def cancel_callback(self, goal_handle : ServerGoalHandle):
 		"""Accept or reject a client request to cancel an action."""
-		self.get_logger().info('Received cancel request')
+		self.get_logger().info('Received a cancel request')
 
 		# Make sure our goal is removed
 		self.goal = None
 
+		# ...and robot stops
+		t = self.zero_twist()
+		self.cmd_pub.publish(t)
+				
 		# Timer to make sure we remove the current target (if there is one)
 		self.marker_timer.reset()
 
@@ -218,8 +223,14 @@ class Lab2Driver(Node):
 		self.set_target()
 
 		# Keep publishing feedback, then sleeping (so the laser scan can happen)
+		# GUIDE: If you aren't making progress, stop the while loop and mark the goal as failed
 		rate = self.create_rate(0.5)
 		while not self.close_enough():
+			if not self.goal:
+				self.get_logger().info(f"Goal was canceled")
+
+				return result
+			
 			feedback = NavTarget.Feedback()
 			feedback.distance.data = self.distance_to_target()
 			
@@ -276,10 +287,12 @@ class Lab2Driver(Node):
 
 			self.target.point.x = rot_x
 			self.target.point.y = rot_y
-			self.get_logger().info(f'Target relative to robot: ({self.target.point.x:.2f}, {self.target.point.y:.2f}), orig ({self.goal.point.x, self.goal.point.y})')
+			if self.print_distance_messages:
+				self.get_logger().info(f'Target relative to robot: ({self.target.point.x:.2f}, {self.target.point.y:.2f}), orig ({self.goal.point.x, self.goal.point.y})')
 			
 		else:
-			self.get_logger().info(f'No target to get distance to')
+			if self.print_distance_messages:
+				self.get_logger().info(f'No target to get distance to')
 			self.target = None		
 		
 		# GUIDE: Calculate any additional variables here
@@ -292,7 +305,8 @@ class Lab2Driver(Node):
 		""" Lidar scan callback
 		@param scan - has information about the scan, and the distances (see stopper.py in lab1)"""
 	
-		self.get_logger().info("In scan callback")
+		if self.print_twist_messages:
+			self.get_logger().info("In scan callback")
 		# Got a scan - set back to zero
 		self.count_since_last_scan = 0
 
@@ -306,7 +320,8 @@ class Lab2Driver(Node):
 		else:
 			t = self.zero_twist()
 			#t.twist.linear.x = 0.1
-			self.get_logger().info(f"No goal, sitting still")
+			if self.print_twist_messages:
+				self.get_logger().info(f"No goal, sitting still")
 
 		# Publish the new twist
 		self.cmd_pub.publish(t)
@@ -349,7 +364,8 @@ class Lab2Driver(Node):
 
 		# t.twist.linear.x = max_speed
 		# t.twist.angular.z = 0.0
-		self.get_logger().info(f"Setting twist forward {t.twist.linear.x} angle {t.twist.angular.z}")
+		if self.print_twist_messages:
+			self.get_logger().info(f"Setting twist forward {t.twist.linear.x} angle {t.twist.angular.z}")
 		return t			
 
 
@@ -363,7 +379,7 @@ def main(args=None):
 
 	# Make a node class.  The idiom in ROS2 is to encapsulte everything in a class
 	# that derives from Node.
-	driver = Lab2Driver()
+	driver = Lab3Driver()
 
 	# Multi-threaded execution
 	executor = MultiThreadedExecutor()
