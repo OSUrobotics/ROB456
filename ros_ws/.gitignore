@@ -1,0 +1,4 @@
+# ROS build stuff
+build/
+install/
+log/

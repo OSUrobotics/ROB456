@@ -32,7 +32,7 @@ from RobotHallway.bayes_filter import BayesFilter
 from RobotHallway.kalman_filter import KalmanFilter
 from RobotHallway.particle_filter import ParticleFilter
 
-from GUI.gui_sliders import SliderFloatDisplay, SliderIntDisplay
+from gui_sliders import SliderFloatDisplay, SliderIntDisplay
 
 
 # The main class for handling the robot drawing and geometry
